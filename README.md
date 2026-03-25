@@ -4,7 +4,7 @@ A full-stack, production-ready **Retrieval-Augmented Generation (RAG)** applicat
 
 Chat with your technical documents, academic papers, and notes using local semantic search and cloud LLMs.
 
-![RAG Interface Demo](image.png)
+![RAG Interface Demo](frontend/public/image.png)
 
 ## ✨ Architecture & Data Flow
 
