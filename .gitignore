@@ -23,7 +23,7 @@ env/
 .python-version
 
 # FAISS Vector Store
-faiss_store/
+backend/faiss_store/
 *.index
 *.pkl
 
@@ -48,3 +48,12 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Uploaded files
+backend/data/uploaded/
+backend/uploads/

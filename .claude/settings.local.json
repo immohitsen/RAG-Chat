@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"import faiss; print(''FAISS works!'')\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -282,10 +282,57 @@ Answer: "A DBMS is software that helps maintain and utilize
 └─────────────────┘
 ```
 
+## 🌐 Full-Stack Web Application (NEW!)
+
+This project now includes a **production-ready web interface**!
+
+### Tech Stack
+- **Backend**: FastAPI + Uvicorn (REST API)
+- **Frontend**: React + Vite + TailwindCSS
+- **Integration**: Axios for API calls
+
+### Quick Start
+
+**1. Install dependencies:**
+```bash
+# Backend
+pip install -r requirements.txt
+
+# Frontend
+cd frontend
+npm install
+cd ..
+```
+
+**2. Run both servers:**
+```bash
+# Terminal 1 - Backend
+python -m uvicorn backend.main:app --reload
+
+# Terminal 2 - Frontend
+cd frontend && npm run dev
+```
+
+**3. Open browser:**
+- Frontend: http://localhost:3000
+- API Docs: http://localhost:8000/api/docs
+
+### Features
+- ✅ Beautiful chat interface
+- ✅ Drag-and-drop file upload
+- ✅ Real-time document indexing
+- ✅ Source citations with confidence scores
+- ✅ Responsive design (mobile-friendly)
+- ✅ Auto-generated API documentation
+
+**📖 See [SETUP.md](SETUP.md) for detailed setup instructions**
+
+---
+
 ## License
 
 MIT License - Feel free to use this for learning or production!
 
 ---
 
-**Status**: ✅ Full RAG pipeline operational | 🎯 Ready for production use
+**Status**: ✅ Full RAG pipeline operational | 🌐 Web UI available | 🎯 Production-ready
