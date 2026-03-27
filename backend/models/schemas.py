@@ -5,6 +5,7 @@ class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1, description="User's question")
     top_k: int = Field(default=3, ge=1, le=10, description="Number of relevant chunks to retrieve")
     selected_files: Optional[List[str]] = Field(default=None, description="Filter search to specific files")
+    session_id: Optional[str] = Field(default=None, description="Existing session ID to append to")
 
 class Source(BaseModel):
     file: str

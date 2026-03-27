@@ -4,10 +4,10 @@ import numpy as np
 import pickle
 from typing import List, Any
 from sentence_transformers import SentenceTransformer
-from backend.src.embedding import EmbeddingPipeline
+from src.embedding import EmbeddingPipeline
 
 class FaissVectorStore:
-    def __init__(self, persist_dir: str = "backend/faiss_store", embedding_model: str = "all-MiniLM-L6-v2", chunk_size: int = 1000, chunk_overlap: int = 200):
+    def __init__(self, persist_dir: str = "faiss_store", embedding_model: str = "all-MiniLM-L6-v2", chunk_size: int = 1000, chunk_overlap: int = 200):
         self.persist_dir = persist_dir
         os.makedirs(self.persist_dir, exist_ok=True)
         self.index = None
@@ -68,9 +68,9 @@ class FaissVectorStore:
 
 # Example usage
 if __name__ == "__main__":
-    from backend.src.data_loader import load_all_documents
-    docs = load_all_documents("backend/data")
-    store = FaissVectorStore("backend/faiss_store")
+    from src.data_loader import load_all_documents
+    docs = load_all_documents("data")
+    store = FaissVectorStore("faiss_store")
     store.build_from_documents(docs)
     store.load()
     print(store.query("What is attention mechanism?", top_k=3))

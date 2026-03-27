@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from backend.models.schemas import HealthResponse
-from backend.services.rag_service import rag_service
+from models.schemas import HealthResponse
+from services.rag_service import rag_service
 
 router = APIRouter(prefix="/api", tags=["health"])
 

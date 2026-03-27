@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.logger import terminal_logger
+from logger import terminal_logger
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 

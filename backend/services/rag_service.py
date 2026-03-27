@@ -1,15 +1,15 @@
 """
-RAG Service - Wrapper around backend/src/ pipeline
+RAG Service - Wrapper around src/ pipeline
 This service DOES NOT modify src/ code, only uses it
 """
 import os
 import sys
 from pathlib import Path
 
-# Import from backend/src/
-from backend.src.search import RAGSearch
-from backend.src.vectorstore import FaissVectorStore
-from backend.src.data_loader import load_all_documents
+# Import from src/
+from src.search import RAGSearch
+from src.vectorstore import FaissVectorStore
+from src.data_loader import load_all_documents
 
 class RAGServiceWrapper:
     """Singleton wrapper around RAGSearch to maintain state"""
@@ -103,7 +103,7 @@ class RAGServiceWrapper:
             raise ValueError(f"Could not load document: {file_path}")
 
         # Add to existing vector store
-        from backend.src.embedding import EmbeddingPipeline
+        from src.embedding import EmbeddingPipeline
         emb_pipe = EmbeddingPipeline()
         chunks = emb_pipe.chunk_documents(filtered_docs)
         embeddings = emb_pipe.embed_chunks(chunks)
@@ -163,18 +163,27 @@ class RAGServiceWrapper:
         """
         import numpy as np
 
-        # Find indices to keep (not matching filename)
+        # Handle legacy documents (chunks with no source info)
+        is_legacy = filename == "Legacy Documents (re-upload recommended)"
+
+        # Find indices to keep
         indices_to_keep = []
         new_metadata = []
         chunks_removed = 0
 
         for idx, meta in enumerate(self.rag_search.vectorstore.metadata):
             source = meta.get("source", "")
-            if filename not in source:
+
+            if is_legacy:
+                should_remove = (source == "Unknown" or source == "")
+            else:
+                should_remove = (filename in source)
+
+            if should_remove:
+                chunks_removed += 1
+            else:
                 indices_to_keep.append(idx)
                 new_metadata.append(meta)
-            else:
-                chunks_removed += 1
 
         if chunks_removed == 0:
             raise ValueError(f"File '{filename}' not found in index")
@@ -210,7 +219,7 @@ class RAGServiceWrapper:
         self.rag_search.vectorstore.save()
 
         # Delete physical file if it exists
-        file_path = Path(f"backend/data/uploaded/{filename}")
+        file_path = Path(f"data/uploaded/{filename}")
         if file_path.exists():
             file_path.unlink()
             print(f"[RAG Service] Deleted file: {file_path}")

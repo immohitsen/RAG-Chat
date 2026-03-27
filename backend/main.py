@@ -2,12 +2,13 @@
 FastAPI Backend for RAG Pipeline
 Wraps existing src/ code without modification
 """
-from backend.logger import terminal_logger
+from logger import terminal_logger
 terminal_logger.start()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import chat, upload, health, files, logs
+from routers import chat, upload, health, files, logs, history
+from database import connect_to_mongo, close_mongo_connection
 
 # Create FastAPI app
 app = FastAPI(
@@ -38,7 +39,7 @@ app.include_router(chat.router)
 app.include_router(upload.router)
 app.include_router(files.router)
 app.include_router(logs.router)
-
+app.include_router(history.router)
 
 @app.get("/")
 async def root():
@@ -51,12 +52,13 @@ async def root():
 # Startup event
 @app.on_event("startup")
 async def startup_event():
+    await connect_to_mongo()
     print("=" * 60)
     print("🚀 RAG Pipeline API Starting...")
     print("=" * 60)
     print("📚 Loading vector store...")
     # This will initialize the RAG service on startup
-    from backend.services.rag_service import rag_service
+    from services.rag_service import rag_service
     stats = rag_service.get_stats()
     print(f"✅ Vector store loaded: {stats['total_vectors']} vectors")
     print("=" * 60)
@@ -65,9 +67,14 @@ async def startup_event():
     print("  • POST /api/upload     - Upload new documents")
     print("  • GET  /api/documents  - List uploaded documents")
     print("  • GET  /api/health     - Health check")
+    print("  • GET  /api/history/sessions - List history")
     print("  • GET  /api/docs       - Swagger UI")
     print("=" * 60)
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    await close_mongo_connection()
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

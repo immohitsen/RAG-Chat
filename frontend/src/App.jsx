@@ -6,10 +6,6 @@ function App() {
   return (
     /* position:fixed + inset:0 = always exactly fills the visible viewport, no overflow ever */
     <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-base)', overflow: 'hidden' }}>
-      {/* Animated background orbs — absolutely positioned inside this fixed container */}
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
-      <div className="orb orb-3" />
 
       {/* Noise texture overlay */}
       <div

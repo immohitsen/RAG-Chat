@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.schemas import ChatRequest, ChatResponse, Source
-from backend.services.rag_service import rag_service
+from models.schemas import ChatRequest, ChatResponse, Source
+from services.rag_service import rag_service
+from database import get_db
+from models.db_models import MessageModel
 import time
 
 router = APIRouter(prefix="/api", tags=["chat"])
@@ -23,15 +25,39 @@ async def chat(request: ChatRequest):
 
         # Format response
         sources = [Source(**src) for src in sources_list]
+        metadata = {
+            "query_time": query_time,
+            "chunks_used": len(sources),
+            "model": "llama-3.1-8b-instant"
+        }
+
+        # Save to DB if session_id is provided
+        if request.session_id:
+            db = get_db()
+            if db is not None:
+                # 1. User Message
+                user_msg = MessageModel(
+                    session_id=request.session_id,
+                    role="user",
+                    content=request.query
+                )
+                # 2. Assistant Message
+                ai_msg = MessageModel(
+                    session_id=request.session_id,
+                    role="assistant",
+                    content=answer,
+                    sources=sources_list,
+                    metadata=metadata
+                )
+                await db.messages.insert_many([
+                    user_msg.dict(by_alias=True),
+                    ai_msg.dict(by_alias=True)
+                ])
 
         return ChatResponse(
             answer=answer,
             sources=sources,
-            metadata={
-                "query_time": query_time,
-                "chunks_used": len(sources),
-                "model": "llama-3.1-8b-instant"
-            }
+            metadata=metadata
         )
 
     except Exception as e:

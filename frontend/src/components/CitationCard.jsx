@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, FileText, Percent } from 'lucide-react';
+import { CaretDown, FileText } from '@phosphor-icons/react';
 
 const confidenceColor = (score) => {
   if (score >= 0.7) return { bar: 'bg-emerald-400', text: 'text-emerald-400' };
@@ -21,7 +21,7 @@ const CitationCard = ({ sources }) => {
       >
         <FileText size={12} className="text-purple-400" />
         <span>{sources.length} source{sources.length !== 1 ? 's' : ''}</span>
-        <ChevronDown size={12} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <CaretDown size={12} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Sources list */}
@@ -44,7 +44,7 @@ const CitationCard = ({ sources }) => {
                 </div>
 
                 {/* Confidence bar */}
-                <div className="w-full h-1 rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                <div className="w-full h-1 rounded-full mb-2" style={{ background: 'var(--border-subtle)' }}>
                   <div
                     className={`conf-bar ${bar}`}
                     style={{ '--fill-width': `${pct}%`, width: `${pct}%` }}

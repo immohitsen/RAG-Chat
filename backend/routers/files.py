@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from backend.models.schemas import FilesListResponse, IndexedFile
-from backend.services.rag_service import rag_service
+from models.schemas import FilesListResponse, IndexedFile
+from services.rag_service import rag_service
 
 router = APIRouter(prefix="/api", tags=["files"])
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from backend.models.schemas import UploadResponse
-from backend.services.rag_service import rag_service
+from models.schemas import UploadResponse
+from services.rag_service import rag_service
 import shutil
 from pathlib import Path
 
@@ -38,7 +38,7 @@ async def upload_document(file: UploadFile = File(...)):
         print(f"[Upload] Saved file to: {file_path}")
 
         # Clear logs before processing this file so frontend gets fresh logs
-        from backend.logger import terminal_logger
+        from logger import terminal_logger
         terminal_logger.clear()
 
         # Add to vector store using your existing pipeline

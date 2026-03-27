@@ -10,12 +10,14 @@ const api = axios.create({
 });
 
 // Chat API
-export const sendQuery = async (query, topK = 3, selectedFiles = null) => {
+export const sendQuery = async (query, topK = 3, selectedFiles = null, sessionId = null) => {
   const response = await api.post('/chat', {
     query,
     top_k: topK,
     selected_files: selectedFiles,
+    session_id: sessionId
   });
+  console.log(response);
   return response.data;
 };
 
@@ -66,6 +68,27 @@ export const deleteFile = async (filename) => {
 // Fetch terminal logs
 export const fetchLogs = async () => {
   const response = await api.get('/logs');
+  return response.data;
+};
+
+// --- History API ---
+export const getSessions = async () => {
+  const response = await api.get('/history/sessions');
+  return response.data;
+};
+
+export const createSession = async (title) => {
+  const response = await api.post('/history/sessions', { title });
+  return response.data;
+};
+
+export const getSessionMessages = async (sessionId) => {
+  const response = await api.get(`/history/sessions/${sessionId}`);
+  return response.data;
+};
+
+export const deleteSession = async (sessionId) => {
+  const response = await api.delete(`/history/sessions/${sessionId}`);
   return response.data;
 };
 
