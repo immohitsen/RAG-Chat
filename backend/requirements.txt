@@ -2,6 +2,7 @@
 langchain
 langchain-core
 langchain-community
+langchain-mongodb
 pypdf
 pymupdf
 sentence-transformers

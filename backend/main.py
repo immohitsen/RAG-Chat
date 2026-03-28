@@ -22,12 +22,7 @@ app = FastAPI(
 # CORS - Allow React frontend to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",  # Vite default
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173"
-    ],
+    allow_origins=["*"], # Allow all for easier cloud deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,7 +39,7 @@ app.include_router(history.router)
 @app.get("/")
 async def root():
     return {
-        "message": "RAG Pipeline API",
+        "message": "RAG Pipeline API (MongoDB Atlas Vector Search)",
         "docs": "/api/docs",
         "health": "/api/health"
     }
@@ -54,21 +49,12 @@ async def root():
 async def startup_event():
     await connect_to_mongo()
     print("=" * 60)
-    print("🚀 RAG Pipeline API Starting...")
+    print("🚀 RAG Pipeline API Starting (MongoDB Atlas)...")
     print("=" * 60)
-    print("📚 Loading vector store...")
-    # This will initialize the RAG service on startup
+    # RAG service is a singleton, it will connect to Mongo on first access
     from services.rag_service import rag_service
     stats = rag_service.get_stats()
-    print(f"✅ Vector store loaded: {stats['total_vectors']} vectors")
-    print("=" * 60)
-    print("API Endpoints:")
-    print("  • POST /api/chat       - Query the RAG system")
-    print("  • POST /api/upload     - Upload new documents")
-    print("  • GET  /api/documents  - List uploaded documents")
-    print("  • GET  /api/health     - Health check")
-    print("  • GET  /api/history/sessions - List history")
-    print("  • GET  /api/docs       - Swagger UI")
+    print(f"✅ MongoDB Vector store connected: {stats['total_vectors']} chunks")
     print("=" * 60)
 
 @app.on_event("shutdown")
@@ -77,4 +63,5 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
