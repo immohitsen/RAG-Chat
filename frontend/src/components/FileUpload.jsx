@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { uploadDocument } from '../services/api';
 import { UploadSimple, X, FileText, CheckCircle } from '@phosphor-icons/react';
 
-const FileUpload = ({ onUploadSuccess, onClose, onProgress }) => {
+const FileUpload = ({ onUploadSuccess, onClose, onProgress, onBusyStateChange }) => {
   const [uploading, setUploading] = useState(false);
   const [stage, setStage] = useState(''); // 'uploading', 'chunking', 'embedding', 'done'
   const [progress, setProgress] = useState(0);
@@ -11,7 +11,14 @@ const FileUpload = ({ onUploadSuccess, onClose, onProgress }) => {
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState(null);
 
-
+  // Notify parent if we are in a state that shouldn't be interrupted
+  const isBusy = uploading && !success && stage !== 'error';
+  
+  React.useEffect(() => {
+    if (onBusyStateChange) {
+      onBusyStateChange(isBusy);
+    }
+  }, [isBusy, onBusyStateChange]);
 
   const processFile = async (file) => {
     if (!file) return;
@@ -19,7 +26,7 @@ const FileUpload = ({ onUploadSuccess, onClose, onProgress }) => {
     setUploading(true);
     setStage('uploading');
     setError(null);
-    setProgress(0);
+    setProgress(10);
     setSuccess(null);
 
     if (onProgress) onProgress({ stage: 'uploading', percent: 0, filename: file.name });
@@ -85,13 +92,17 @@ const FileUpload = ({ onUploadSuccess, onClose, onProgress }) => {
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>PDF, TXT, CSV, Excel, Word, JSON</p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="w-7 h-7 rounded-lg glass flex items-center justify-center hover:border-red-500/30 transition-all"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <X size={14} />
-        </button>
+        
+        {/* Only show close button if not busy OR if there was an error */}
+        {(!isBusy || stage === 'error') && (
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg glass flex items-center justify-center hover:border-red-500/30 transition-all animate-fade-in"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Drop Zone */}
@@ -145,14 +156,26 @@ const FileUpload = ({ onUploadSuccess, onClose, onProgress }) => {
               </p>
             </div>
             {stage === 'uploading' && <span className="text-sm font-semibold gradient-text w-10 text-right">{progress}%</span>}
+            {stage === 'chunking' && <span className="text-sm font-semibold gradient-text w-10 text-right">75%</span>}
+            {stage === 'embedding' && <span className="text-sm font-semibold gradient-text w-10 text-right">90%</span>}
+            {stage === 'done' && <span className="text-sm font-semibold gradient-text w-10 text-right">100%</span>}
             {stage === 'error' && (
                <button onClick={() => { setUploading(false); setStage(''); }} className="text-xs text-red-500 hover:underline">Retry</button>
             )}
           </div>
           <div className="w-full h-1.5 rounded-full" style={{ background: 'rgba(0,0,0,0.05)' }}>
             <div
-              className={`h-1.5 rounded-full transition-all duration-300 ${stage === 'error' ? 'bg-red-500' : stage !== 'uploading' ? 'btn-gradient animate-pulse' : 'btn-gradient'}`}
-              style={{ width: stage === 'uploading' ? `${progress}%` : '100%' }}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                stage === 'error' ? 'bg-red-500' : 
+                'btn-gradient'
+              }`}
+              style={{ 
+                width: 
+                  stage === 'uploading' ? `${Math.round(progress * 0.6)}%` : 
+                  stage === 'chunking' ? '75%' :
+                  stage === 'embedding' ? '90%' :
+                  stage === 'done' ? '100%' : '0%'
+              }}
             />
           </div>
         </div>

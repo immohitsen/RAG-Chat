@@ -26,6 +26,7 @@ const ChatInterface = () => {
   const [topK, setTopK] = useState(3);
   const [selectedFiles, setSelectedFiles] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [isIndexing, setIsIndexing] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [stats, setStats] = useState({ queries: 0, sources: 0 });
   const [currentSessionId, setCurrentSessionId] = useState(null);
@@ -34,7 +35,11 @@ const ChatInterface = () => {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Small timeout ensures the DOM has finished rendering & layout shifts before scrolling
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   // Re-focus the input box automatically after the AI finishes loading
@@ -154,7 +159,7 @@ const ChatInterface = () => {
           }`}
           title="New chat"
         >
-          <NotePencilIcon size={isSidebarOpen ? 20 : 22} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105 opacity-80" />
+          <NotePencilIcon size={isSidebarOpen ? 20 : 20} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105 opacity-80" />
           <span 
             className={`whitespace-nowrap transition-all duration-300 text-[15px] ${isSidebarOpen ? 'w-auto opacity-100' : 'w-0 opacity-0 hidden'}`}
           >
@@ -176,7 +181,7 @@ const ChatInterface = () => {
           {/* History */}
           <div className="flex flex-col flex-1 min-h-0">
             <p className="text-xs font-medium mb-3 px-2 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>RECENT CHATS</p>
-            <div className="flex-1 overflow-y-auto min-h-0 px-1">
+            <div className="flex-1 overflow-y-auto px-1">
               <ChatHistory 
                 currentSessionId={currentSessionId} 
                 onSelectSession={handleSelectSession} 
@@ -223,7 +228,10 @@ const ChatInterface = () => {
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center">
+        <div 
+          className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center"
+          style={{ overflowAnchor: 'auto', willChange: 'transform' }}
+        >
           <div className={`w-full max-w-3xl flex flex-col ${messages.length === 0 ? 'flex-1' :      'space-y-4'}`}>
             {/* Welcome State */}
             {messages.length === 0 && (
@@ -359,12 +367,16 @@ const ChatInterface = () => {
       {/* ── Upload Modal ── */}
       {showUpload && (
         <>
-          <div className="blur-backdrop" onClick={() => setShowUpload(false)} />
+          <div 
+            className={`blur-backdrop ${isIndexing ? 'cursor-not-allowed' : 'cursor-pointer'}`} 
+            onClick={() => !isIndexing && setShowUpload(false)} 
+          />
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
             <div className="pointer-events-auto animate-scale-in">
               <FileUpload
                 onUploadSuccess={handleUploadSuccess}
                 onClose={() => setShowUpload(false)}
+                onBusyStateChange={setIsIndexing}
               />
             </div>
           </div>

@@ -9,7 +9,7 @@ from pathlib import Path
 # Import from src/
 from src.search import RAGSearch
 from src.vectorstore import FaissVectorStore
-from src.data_loader import load_all_documents
+from src.data_loader import load_all_documents, load_single_document
 
 class RAGServiceWrapper:
     """Singleton wrapper around RAGSearch to maintain state"""
@@ -92,20 +92,17 @@ class RAGServiceWrapper:
         Add a new document to the vector store
         Returns: number of chunks added
         """
-        # Load the single document
-        docs = load_all_documents(str(Path(file_path).parent))
+        # Load the specific document only
+        print(f"[RAG Service] Loading single document: {file_path}")
+        docs = load_single_document(file_path)
 
-        # Filter to only the specific file
-        target_file = Path(file_path).name
-        filtered_docs = [d for d in docs if target_file in str(d.metadata.get("source", ""))]
-
-        if not filtered_docs:
+        if not docs:
             raise ValueError(f"Could not load document: {file_path}")
 
         # Add to existing vector store
         from src.embedding import EmbeddingPipeline
         emb_pipe = EmbeddingPipeline()
-        chunks = emb_pipe.chunk_documents(filtered_docs)
+        chunks = emb_pipe.chunk_documents(docs)
         embeddings = emb_pipe.embed_chunks(chunks)
 
         import numpy as np
@@ -117,7 +114,7 @@ class RAGServiceWrapper:
         )
         self.rag_search.vectorstore.save()
 
-        print(f"[RAG Service] Added {len(chunks)} chunks from {target_file}")
+        print(f"[RAG Service] Added {len(chunks)} chunks from {Path(file_path).name}")
         return len(chunks)
 
     def get_stats(self):

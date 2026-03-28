@@ -25,8 +25,8 @@ async def upload_document(file: UploadFile = File(...)):
                 detail=f"File type {file_ext} not supported. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
             )
 
-        # Save uploaded file to backend/data/uploaded/
-        upload_dir = Path("backend/data/uploaded")
+        # Save uploaded file to data/uploaded/
+        upload_dir = Path("data/uploaded")
         upload_dir.mkdir(parents=True, exist_ok=True)
 
         file_path = upload_dir / file.filename
@@ -57,7 +57,7 @@ async def upload_document(file: UploadFile = File(...)):
 @router.get("/documents")
 async def list_documents():
     """List all uploaded documents"""
-    upload_dir = Path("backend/data/uploaded")
+    upload_dir = Path("data/uploaded")
     if not upload_dir.exists():
         return {"documents": []}
 
