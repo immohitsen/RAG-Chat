@@ -280,9 +280,9 @@ const ChatInterface = () => {
               ? 'absolute top-[50%] left-0 right-0 w-full' 
               : 'pb-6 relative'
           }`} 
-          style={messages.length === 0 ? {} : { background: 'linear-gradient(to top, var(--bg-surface) 60%, transparent)' }}
+          style={messages.length === 0 ? {} : { background: 'linear-gradient(to top, var(--bg-surface) 20%, transparent)' }}
         >
-          <div className="w-full max-w-3xl bg-white rounded-[28px] flex flex-col p-2 transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.04)] border-2 border-gray-100">
+          <div className="w-full max-w-3xl bg-white rounded-[30px] flex flex-col p-2 transition-all duration-200 shadow-sm border-[1px] border-gray-300">
             <textarea
               ref={textareaRef}
               value={input}

@@ -1,0 +1,20 @@
+version: 1.0
+runtime: python3
+run:
+  # The command starts from the backend directory
+  command: python main.py
+  network:
+    port: 8080
+  env:
+    - name: PORT
+      value: 8080
+    - name: GROQ_API_KEY
+      value: "TO_BE_CONFIGURED_IN_CONSOLES"
+    - name: MONGODB_URI
+      value: "TO_BE_CONFIGURED_IN_CONSOLES"
+health-check:
+  path: /api/health
+  interval: 10
+  timeout: 5
+  healthyThreshold: 2
+  unhealthyThreshold: 3

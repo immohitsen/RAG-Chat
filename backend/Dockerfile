@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PORT 7860
+ENV PORT 8080
 
 # Install system dependencies needed for some Python packages
 RUN apt-get update && apt-get install -y \
@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port (Hugging Face default is 7860)
-EXPOSE 7860
+EXPOSE 8080
 
 # Command to run the application
 # We use uvicorn to serve the FastAPI app
