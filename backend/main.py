@@ -4,11 +4,13 @@ Wraps existing src/ code without modification
 """
 from logger import terminal_logger
 terminal_logger.start()
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import chat, upload, health, files, logs, history
 from database import connect_to_mongo, close_mongo_connection
+from mangum import Mangum
 
 # Create FastAPI app
 app = FastAPI(
@@ -60,6 +62,9 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     await close_mongo_connection()
+
+# Lambda handler for AWS
+handler = Mangum(app)
 
 if __name__ == "__main__":
     import uvicorn

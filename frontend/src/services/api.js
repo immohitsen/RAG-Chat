@@ -21,21 +21,29 @@ export const sendQuery = async (query, topK = 3, selectedFiles = null, sessionId
   return response.data;
 };
 
-// Upload API
+// Upload API - S3 presigned URL flow
 export const uploadDocument = async (file, onProgress) => {
-  const formData = new FormData();
-  formData.append('file', file);
+  // Step 1: Get presigned URL
+  const { data: { upload_url, s3_key } } = await api.post('/upload/presigned-url', {
+    filename: file.name,
+    content_type: file.type || 'application/octet-stream',
+  });
 
-  const response = await api.post('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  // Step 2: Upload directly to S3
+  await axios.put(upload_url, file, {
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round(
         (progressEvent.loaded * 100) / progressEvent.total
       );
       if (onProgress) onProgress(percentCompleted);
     },
+  });
+
+  // Step 3: Tell backend to process the file
+  const response = await api.post('/upload/process', {
+    s3_key,
+    filename: file.name,
   });
 
   return response.data;

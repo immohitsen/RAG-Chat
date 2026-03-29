@@ -3,13 +3,13 @@ langchain
 langchain-core
 langchain-community
 langchain-mongodb
+langchain-text-splitters
 pypdf
-pymupdf
 sentence-transformers
-faiss-cpu
-chromadb
 langchain-groq
 python-dotenv
+pymongo
+boto3
 
 # FastAPI Backend Dependencies
 fastapi
@@ -17,3 +17,4 @@ uvicorn[standard]
 python-multipart
 pydantic
 motor
+mangum==0.17.0
