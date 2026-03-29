@@ -38,13 +38,15 @@ async def get_presigned_url(req: PresignedUrlRequest):
 
     s3_key = f"uploads/{req.filename}"
 
-    presigned_url = s3_client.generate_presigned_url(
-        "put_object",
-        Params={"Bucket": S3_BUCKET, "Key": s3_key, "ContentType": req.content_type},
+    presigned = s3_client.generate_presigned_post(
+        Bucket=S3_BUCKET,
+        Key=s3_key,
+        Fields={"Content-Type": req.content_type},
+        Conditions=[{"Content-Type": req.content_type}],
         ExpiresIn=300,
     )
 
-    return {"upload_url": presigned_url, "s3_key": s3_key}
+    return {"upload_url": presigned["url"], "fields": presigned["fields"], "s3_key": s3_key}
 
 
 @router.post("/upload/process", response_model=UploadResponse)
