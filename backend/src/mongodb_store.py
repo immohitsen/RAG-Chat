@@ -92,8 +92,13 @@ class MongoDBVectorStore:
 
     def delete_by_filename(self, filename: str):
         """Delete all chunks belonging to a specific filename"""
-        # We search in the 'source' field (which usually contains the full path or filename)
-        result = self.collection.delete_many({"source": {"$regex": filename}})
+        import re
+        result = self.collection.delete_many({
+            "$or": [
+                {"source": filename},
+                {"source": {"$regex": re.escape(filename)}},
+            ]
+        })
         print(f"[MongoDB Store] Deleted {result.deleted_count} chunks for {filename}.")
         return result.deleted_count
 

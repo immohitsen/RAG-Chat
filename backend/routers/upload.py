@@ -4,6 +4,7 @@ from models.schemas import UploadResponse
 from services.rag_service import rag_service
 from pathlib import Path
 import boto3
+from botocore.config import Config
 import os
 import tempfile
 
@@ -13,7 +14,11 @@ ALLOWED_EXTENSIONS = {".pdf", ".txt", ".csv", ".xlsx", ".docx", ".json"}
 S3_BUCKET = os.getenv("S3_BUCKET", "rag-uploads-051370879738")
 AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
-s3_client = boto3.client("s3", region_name=AWS_REGION)
+s3_client = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    config=Config(s3={"addressing_style": "virtual"}),
+)
 
 
 class PresignedUrlRequest(BaseModel):
@@ -38,26 +43,23 @@ async def get_presigned_url(req: PresignedUrlRequest):
 
     s3_key = f"uploads/{req.filename}"
 
-    presigned = s3_client.generate_presigned_post(
-        Bucket=S3_BUCKET,
-        Key=s3_key,
-        Fields={"Content-Type": req.content_type},
-        Conditions=[{"Content-Type": req.content_type}],
+    presigned_url = s3_client.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": S3_BUCKET, "Key": s3_key},
         ExpiresIn=300,
     )
 
-    return {"upload_url": presigned["url"], "fields": presigned["fields"], "s3_key": s3_key}
+    return {"upload_url": presigned_url, "s3_key": s3_key}
 
 
 @router.post("/upload/process", response_model=UploadResponse)
 async def process_uploaded_file(req: ProcessRequest):
     """Download file from S3 and add to vector store"""
     try:
-        with tempfile.NamedTemporaryFile(
-            suffix=Path(req.filename).suffix, delete=False
-        ) as tmp:
-            s3_client.download_fileobj(S3_BUCKET, req.s3_key, tmp)
-            tmp_path = tmp.name
+        tmp_dir = tempfile.mkdtemp()
+        tmp_path = os.path.join(tmp_dir, req.filename)
+        with open(tmp_path, "wb") as f:
+            s3_client.download_fileobj(S3_BUCKET, req.s3_key, f)
 
         from logger import terminal_logger
         terminal_logger.clear()

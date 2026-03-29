@@ -16,7 +16,7 @@ async def get_indexed_files():
         total_files=len(files)
     )
 
-@router.delete("/files/{filename}")
+@router.delete("/files/{filename:path}")
 async def delete_file(filename: str):
     """
     Delete a file from the vector store
