@@ -35,7 +35,7 @@ $password | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
 
 # Step 3: Build Docker image
 Write-Host "`n🔨 Step 3: Building Docker image..." -ForegroundColor Yellow
-docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+docker buildx build --platform linux/amd64 --provenance=false --load -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
 
 # Step 4: Tag Docker image
 Write-Host "`n🏷️  Step 4: Tagging Docker image..." -ForegroundColor Yellow

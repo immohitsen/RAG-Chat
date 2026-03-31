@@ -169,13 +169,15 @@ const ChatInterface = () => {
         style={!isMobile ? { borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' } : {}}>
 
         <div className={`flex w-full ${isSidebarOpen ? 'justify-between' : 'justify-center'} px-1 items-center`}>
-          {/* <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-            className="p-2 rounded-xl hover:bg-black/5 transition-colors text-gray-500"
-            title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            <ListIcon size={22} className="flex-shrink-0" />
-          </button> */}
+          {!isMobile && (
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-xl hover:bg-black/5 transition-colors text-gray-500"
+              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <ListIcon size={22} className="flex-shrink-0" />
+            </button>
+          )}
           
           {isMobile && isSidebarOpen && (
              <button 

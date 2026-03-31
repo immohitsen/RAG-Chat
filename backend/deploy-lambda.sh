@@ -8,7 +8,7 @@ set -e
 echo "🚀 Starting AWS Lambda Deployment..."
 
 # Configuration
-AWS_REGION=${AWS_REGION:-us-east-1}
+AWS_REGION=${AWS_REGION:-ap-south-1}
 ECR_REPO_NAME="rag-backend"
 LAMBDA_FUNCTION_NAME="rag-backend-api"
 LAMBDA_ROLE_NAME="rag-lambda-execution-role"
