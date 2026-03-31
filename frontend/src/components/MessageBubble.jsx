@@ -12,17 +12,8 @@ const MessageBubble = ({ message }) => {
 
   if (isUser) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <div style={{
-          maxWidth: '72%',
-          background: 'var(--bg-surface-hover, rgba(0,0,0,0.06))',
-          borderRadius: 22,
-          padding: '12px 18px',
-          fontSize: 16,
-          lineHeight: 1.65,
-          color: 'var(--text-primary)',
-          wordBreak: 'break-word',
-        }}>
+      <div className="flex justify-end mb-4">
+        <div className="max-w-[85%] md:max-w-[75%] bg-black/5 rounded-[22px] px-4 py-2.5 md:px-5 md:py-3 text-[15px] md:text-[16px] leading-relaxed text-gray-800 break-words">
           {message.content}
         </div>
       </div>
@@ -31,17 +22,17 @@ const MessageBubble = ({ message }) => {
 
   // AI message
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 20, gap: 12 }}>
+    <div className="flex gap-2.5 md:gap-4 mb-5 max-w-[95%] md:max-w-[85%]">
       {/* Diamond icon */}
-      <div style={{ flexShrink: 0, marginTop: 3 }}>
-        <DiamondsFourIcon  size={24} style={{ color: 'var(--accent-purple, #7c3aed)' }} />
+      <div className="flex-shrink-0 mt-1">
+        <DiamondsFourIcon size={20} className="md:w-6 md:h-6 text-purple-600" />
       </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0">
         {message.isError ? (
-          <p style={{ color: '#ef4444', lineHeight: 1.7 }}>{message.content}</p>
+          <p className="text-red-500 leading-relaxed">{message.content}</p>
         ) : (
-          <div style={{ fontSize: 15, lineHeight: 1.75 }} className="markdown-prose">
+          <div className="text-[14px] md:text-[15px] leading-relaxed markdown-prose">
             <ReactMarkdown 
               remarkPlugins={[remarkGfm]}
               components={{

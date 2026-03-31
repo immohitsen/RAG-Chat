@@ -12,16 +12,16 @@ const CitationCard = ({ sources }) => {
   if (!sources || sources.length === 0) return null;
 
   return (
-    <div className="ml-11 mb-4 animate-fade-in">
+    <div className="ml-8 md:ml-12 mb-5 animate-fade-in">
       {/* Toggle */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 text-xs px-3 py-1.5 glass rounded-lg mb-2 transition-all hover:border-purple-500/30"
+        className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-xs px-2.5 py-1 md:px-3 md:py-1.5 glass rounded-lg mb-2 transition-all hover:border-purple-500/30"
         style={{ color: 'var(--text-muted)' }}
       >
         <FileText size={12} className="text-purple-400" />
         <span>{sources.length} source{sources.length !== 1 ? 's' : ''}</span>
-        <CaretDown size={12} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <CaretDown size={10} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Sources list */}

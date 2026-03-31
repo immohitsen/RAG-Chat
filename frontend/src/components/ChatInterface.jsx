@@ -22,17 +22,32 @@ const ChatInterface = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const [topK, setTopK] = useState(3);
-  const [selectedFiles, setSelectedFiles] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [stats, setStats] = useState({ queries: 0, sources: 0 });
+  const [showContext, setShowContext] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
-  const [showContext, setShowContext] = useState(false);
-  const [stats, setStats] = useState({ queries: 0, sources: 0 });
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Responsive detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setIsSidebarOpen(false);
+      else setIsSidebarOpen(true);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Small timeout ensures the DOM has finished rendering & layout shifts before scrolling
@@ -119,6 +134,7 @@ const ChatInterface = () => {
     }
     setCurrentSessionId(sessionId);
     setLoading(true);
+    if (isMobile) setIsSidebarOpen(false);
     try {
       const msgs = await getSessionMessages(sessionId);
       setMessages(msgs);
@@ -134,28 +150,50 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="flex h-full">
-      {/* ── Sidebar ── */}
-      <aside className={`flex-shrink-0 flex flex-col gap-5 border-r transition-[width,padding] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${
-        isSidebarOpen ? 'w-72 p-4' : 'w-[76px] py-4 px-2 items-center'
-      }`}
-        style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+    <div className="flex h-full w-full overflow-hidden bg-white">
+      {/* ── Sidebar Backdrop (Mobile) ── */}
+      {isMobile && isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-        <div className={`flex w-full ${isSidebarOpen ? 'justify-start' : 'justify-start'} px-1`}>
-          <button 
+      {/* ── Sidebar ── */}
+      <aside className={`
+        flex-shrink-0 flex flex-col gap-5 border-r transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden z-50
+        ${isMobile ? 'fixed inset-y-0 left-0 bg-white shadow-2xl' : 'relative'}
+        ${isSidebarOpen ? 'w-72 p-4' : isMobile ? 'w-0 p-0 border-none' : 'w-[76px] py-4 px-2 items-center'}
+      `}
+        style={{ borderColor: 'var(--border-subtle)', background: isMobile ? '#fff' : 'var(--bg-surface)' }}>
+
+        <div className={`flex w-full ${isSidebarOpen ? 'justify-between' : 'justify-center'} px-1 items-center`}>
+          {/* <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
             className="p-2 rounded-xl hover:bg-black/5 transition-colors text-gray-500"
             title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             <ListIcon size={22} className="flex-shrink-0" />
-          </button>
+          </button> */}
+          
+          {isMobile && isSidebarOpen && (
+             <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 rounded-xl hover:bg-black/5 text-gray-400"
+             >
+                <CaretDownIcon size={20} className="rotate-90" />
+             </button>
+          )}
         </div>
 
         {/* New Chat Button */}
         <button
-          onClick={handleNewChat}
+          onClick={() => {
+            handleNewChat();
+            if (isMobile) setIsSidebarOpen(false);
+          }}
           className={`group flex items-center rounded-xl text-gray-700 font-medium transition-all duration-300 flex-shrink-0 overflow-hidden hover:bg-black/5 ${
-            isSidebarOpen ? 'justify-start gap-3 px-3 py-2.5 w-full mx-0' : 'justify-start p-0 w-11 h-11'
+            isSidebarOpen ? 'justify-start gap-3 px-3 py-2.5 w-full mx-0' : 'justify-center p-0 w-11 h-11'
           }`}
           title="New chat"
         >
@@ -167,20 +205,14 @@ const ChatInterface = () => {
           </span>
         </button>
 
-        {/* Removed File Selector from here */}
-
-        {/* Removed Top-K from here */}
-
-        {/* Pipeline Progress Widget Removed */}
-
-        {/* Lower Sidebar Content - Hides Smoothly */}
+        {/* Lower Sidebar Content */}
         <div className={`flex flex-col flex-1 min-h-0 transition-opacity duration-300 ${
             isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`} style={{ width: '256px' }}>
+        }`} style={{ width: '100%' }}>
           
           {/* History */}
           <div className="flex flex-col flex-1 min-h-0">
-            <p className="text-xs font-medium mb-3 px-2 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>RECENT CHATS</p>
+            <p className="text-xs font-semibold mb-3 px-2 flex-shrink-0 tracking-wider" style={{ color: 'var(--text-muted)' }}>RECENT CHATS</p>
             <div className="flex-1 overflow-y-auto px-1">
               <ChatHistory 
                 currentSessionId={currentSessionId} 
@@ -192,17 +224,17 @@ const ChatInterface = () => {
 
           {/* Stats */}
           <div className="mt-4 flex-shrink-0 px-1">
-          <div className="glass-card p-4 flex gap-4">
-            <div className="flex-1 text-center">
-              <div className="text-xl font-bold gradient-text">{stats.queries}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Queries</div>
+            <div className="glass-card p-4 flex gap-4">
+              <div className="flex-1 text-center">
+                <div className="text-xl font-bold gradient-text">{stats.queries}</div>
+                <div className="text-[10px] uppercase tracking-tighter" style={{ color: 'var(--text-muted)' }}>Queries</div>
+              </div>
+              <div className="w-px" style={{ background: 'var(--border-subtle)' }} />
+              <div className="flex-1 text-center">
+                <div className="text-xl font-bold gradient-text">{stats.sources}</div>
+                <div className="text-[10px] uppercase tracking-tighter" style={{ color: 'var(--text-muted)' }}>Sources</div>
+              </div>
             </div>
-            <div className="w-px" style={{ background: 'var(--border-subtle)' }} />
-            <div className="flex-1 text-center">
-              <div className="text-xl font-bold gradient-text">{stats.sources}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Sources</div>
-            </div>
-          </div>
           </div>
         </div>
       </aside>
@@ -211,18 +243,28 @@ const ChatInterface = () => {
       <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* Header */}
-        <header className="flex items-center justify-between px-6 py-4 flex-shrink-0 relative z-20">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
+        <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 flex-shrink-0 relative z-20 border-b border-gray-100/50">
+          <div className="flex items-center gap-2 md:gap-3">
+             {isMobile && (
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 -ml-2 rounded-xl hover:bg-black/5 text-gray-500"
+                >
+                  <ListIcon size={22} />
+                </button>
+             )}
+            <span className="text-base md:text-lg font-semibold tracking-tight" style={{ color: 'var(--text-secondary)' }}>
               Maester
             </span>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 md:gap-5">
             <FileSelector asHeaderIcon={true} onSelectionChange={setSelectedFiles} refreshTrigger={refreshTrigger} />
-            <div className="w-px h-6 bg-gray-200" />
+            <div className="hidden sm:block w-px h-6 bg-gray-200" />
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Llama 3.1 • Groq</span>
+              <span className="text-[10px] md:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                {isMobile ? 'Llama 3.1' : 'Llama 3.1 • Groq'}
+              </span>
             </div>
           </div>
         </header>
@@ -237,8 +279,8 @@ const ChatInterface = () => {
             {messages.length === 0 && (
             <div className="absolute top-[32%] left-0 right-0 flex justify-center animate-fade-in px-6 pointer-events-none z-0">
               <div className="w-full max-w-3xl flex flex-col items-start gap-1">
-                <span className="text-2xl font-regular" style={{ color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Hi Buddy</span>
-                <span className="text-4xl" style={{ color: 'var(--text-primary)', fontWeight: 400, fontFamily: 'inherit' }}>Where should we start?</span>
+                <span className="text-xl md:text-2xl font-regular" style={{ color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Hi Buddy</span>
+                <span className="text-3xl md:text-4xl leading-tight" style={{ color: 'var(--text-primary)', fontWeight: 400, fontFamily: 'inherit' }}>Where should we start?</span>
               </div>
             </div>
           )}
@@ -275,52 +317,52 @@ const ChatInterface = () => {
 
         {/* Input */}
         <div 
-          className={`px-6 pt-2 flex flex-col items-center flex-shrink-0 z-10 transition-all duration-500 ease-in-out ${
+          className={`px-4 md:px-6 pt-2 flex flex-col items-center flex-shrink-0 z-10 transition-all duration-500 ease-in-out ${
             messages.length === 0 
-              ? 'absolute top-[50%] left-0 right-0 w-full' 
-              : 'pb-6 relative'
+              ? 'absolute top-[52%] left-0 right-0 w-full' 
+              : 'pb-4 md:pb-6 relative'
           }`} 
-          style={messages.length === 0 ? {} : { background: 'linear-gradient(to top, var(--bg-surface) 20%, transparent)' }}
+          style={messages.length === 0 ? {} : { background: 'linear-gradient(to top, var(--bg-base) 20%, transparent)' }}
         >
-          <div className="w-full max-w-3xl bg-white rounded-[30px] flex flex-col p-2 transition-all duration-200 shadow-sm border-[1px] border-gray-300">
+          <div className="w-full max-w-3xl bg-white rounded-[24px] md:rounded-[30px] flex flex-col p-1.5 md:p-2 transition-all duration-200 shadow-sm border-[1px] border-gray-300">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask With Context"
+              placeholder={isMobile ? "Ask anything..." : "Ask With Context"}
               className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500"
-              style={{ color: 'var(--text-primary)', minHeight: '60px', maxHeight: '200px' }}
+              style={{ color: 'var(--text-primary)', minHeight: '50px', mdMinHeight: '60px', maxHeight: '180px' }}
               rows={1}
               disabled={loading}
               onInput={e => {
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
               }}
             />
             
             <div className="flex items-center justify-between w-full mt-1 px-1 pb-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <button
                   onClick={() => setShowUpload(true)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                   title="Upload Document"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  <PlusIcon size={22} className="text-gray-500" />
+                  <PlusIcon size={20} className="text-gray-500" />
                 </button>
                 
                 {/* Custom Popover for Top-K */}
                 <div className="relative flex items-center">
                   <button
                     onClick={() => setShowContext(!showContext)}
-                    className="h-8 px-3 flex items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                    className="h-7 md:h-8 px-2 md:px-3 flex items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 transition-colors"
                     title="Context Chunks"
                     style={{ color: 'var(--text-secondary)' }}
                   >
-                    <DatabaseIcon size={16} className="text-gray-500" />
-                    <span className="text-[13px] font-medium text-gray-600">Context: {topK}</span>
-                    <CaretDownIcon size={14} className="opacity-70" />
+                    <DatabaseIcon size={14} className="text-gray-500" />
+                    <span className="text-[12px] font-medium text-gray-600">{isMobile ? 'Chunks: ' : 'Context: '}{topK}</span>
+                    <CaretDownIcon size={12} className="opacity-70" />
                   </button>
                   
                   {showContext && (

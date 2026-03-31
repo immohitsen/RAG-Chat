@@ -17,9 +17,15 @@ async def chat(request: ChatRequest):
     try:
         start_time = time.time()
 
-        # Call RAG pipeline with optional file filtering
-        selected_files = getattr(request, 'selected_files', None)
-        answer, sources_list = rag_service.query(request.query, request.top_k, selected_files)
+        # Intent classification — chitchat goes directly to LLM, skip RAG
+        intent = rag_service.classify_intent(request.query)
+
+        if intent == "chitchat":
+            answer, sources_list = rag_service.respond_direct(request.query, "chitchat")
+        else:
+            # knowledge → retrieval + similarity threshold (fallback handled inside query())
+            selected_files = getattr(request, 'selected_files', None)
+            answer, sources_list = rag_service.query(request.query, request.top_k, selected_files)
 
         query_time = round(time.time() - start_time, 2)
 

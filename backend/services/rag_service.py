@@ -5,9 +5,23 @@ import os
 import sys
 from pathlib import Path
 
+from langchain_core.messages import SystemMessage, HumanMessage
+
 # Import from src/
 from src.search import RAGSearch
 from src.data_loader import load_single_document
+from src.intent_classifier import IntentClassifier
+
+SIMILARITY_THRESHOLD = 0.60
+
+CHITCHAT_SYSTEM = "You are a friendly conversational assistant. Respond naturally and casually."
+GENERAL_SYSTEM = """You are a document-based QA assistant. You can ONLY answer questions based on the documents uploaded by the user.
+
+For this query, no relevant information was found in the uploaded documents.
+Respond by:
+1. Telling the user that no relevant information was found in their uploaded documents
+2. Telling them what you CAN do: answer questions based on their uploaded documents
+Do NOT answer from general knowledge. Do NOT pretend to be a general-purpose assistant."""
 
 class RAGServiceWrapper:
     """Singleton wrapper around RAGSearch to maintain state"""
@@ -25,8 +39,20 @@ class RAGServiceWrapper:
 
         print("[RAG Service] Initializing MongoDB RAG pipeline...")
         self.rag_search = RAGSearch()
+        self.classifier = IntentClassifier(self.rag_search.llm)
         self._initialized = True
         print("[RAG Service] MongoDB RAG pipeline ready!")
+
+    def classify_intent(self, query: str) -> str:
+        return self.classifier.classify(query)
+
+    def respond_direct(self, query: str, mode: str) -> tuple:
+        system = CHITCHAT_SYSTEM if mode == "chitchat" else GENERAL_SYSTEM
+        response = self.rag_search.llm.invoke([
+            SystemMessage(content=system),
+            HumanMessage(content=query)
+        ])
+        return response.content, []
 
     def query(self, query_text: str, top_k: int = 3, selected_files: list = None):
         """
@@ -45,12 +71,18 @@ class RAGServiceWrapper:
                     filtered_results.append(r)
             results = filtered_results[:top_k]
 
+        # Filter by similarity threshold
+        results = [r for r in results if (1.0 - r.get("distance", 1.0)) >= SIMILARITY_THRESHOLD]
+
+        if not results:
+            return self.respond_direct(query_text, "general")
+
         # Build context
         texts = [r["metadata"].get("text", "") for r in results if r.get("metadata")]
         context = "\n\n".join(texts)
 
         if not context:
-            return "No relevant documents found in selected files.", []
+            return self.respond_direct(query_text, "general")
 
         # Generate answer
         prompt = f"""Summarize the following context for the query: '{query_text}'\n\nContext:\n{context}\n\nSummary:"""
