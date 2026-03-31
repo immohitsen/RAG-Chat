@@ -60,6 +60,10 @@ class RAGServiceWrapper:
         Returns: (answer, sources_list)
         """
         # Get detailed results from MongoDB
+        # selected_files=None means no filter, selected_files=[] means nothing selected → no results
+        if selected_files is not None and len(selected_files) == 0:
+            return self.respond_direct(query_text, "general")
+
         results = self.rag_search.vectorstore.search(query_text, top_k=top_k * 20 if selected_files else top_k)
 
         # Filter by selected files if provided
@@ -102,14 +106,14 @@ class RAGServiceWrapper:
 
         return answer, sources
 
-    def add_document(self, file_path: str):
+    def add_document(self, file_path: str, user_id: str = None):
         """Add document to MongoDB Vector Store"""
         print(f"[RAG Service] Loading document to MongoDB: {file_path}")
         docs = load_single_document(file_path)
         if not docs:
             raise ValueError(f"Could not load document: {file_path}")
 
-        count = self.rag_search.vectorstore.add_documents(docs)
+        count = self.rag_search.vectorstore.add_documents(docs, user_id=user_id)
         print(f"[RAG Service] Added {count} chunks from {Path(file_path).name} to MongoDB Atlas.")
         return count
 
@@ -117,10 +121,9 @@ class RAGServiceWrapper:
         """Get MongoDB vector store statistics"""
         return self.rag_search.vectorstore.get_stats()
 
-    def get_indexed_files(self):
+    def get_indexed_files(self, user_id: str = None):
         """Get list of files from MongoDB"""
-        files = self.rag_search.vectorstore.get_unique_files()
-        # Ensure format matches what frontend expects
+        files = self.rag_search.vectorstore.get_unique_files(user_id=user_id)
         return [
             {
                 "filename": f["filename"],
@@ -129,15 +132,14 @@ class RAGServiceWrapper:
             } for f in files
         ]
 
-    def delete_file(self, filename: str):
+    def delete_file(self, filename: str, user_id: str = None):
         """Delete file from MongoDB Atlas"""
-        count = self.rag_search.vectorstore.delete_by_filename(filename)
-        
-        # Also clean up local file if it exists (for backend hygiene)
+        count = self.rag_search.vectorstore.delete_by_filename(filename, user_id=user_id)
+
         file_path = Path(f"data/uploaded/{filename}")
         if file_path.exists():
             file_path.unlink()
-            
+
         return count
 
 # Singleton instance

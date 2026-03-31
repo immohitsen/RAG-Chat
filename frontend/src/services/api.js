@@ -9,6 +9,24 @@ const api = axios.create({
   },
 });
 
+// Attach token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// Auth API
+export const loginUser = async (username, password) => {
+  const response = await api.post('/auth/login', { username, password });
+  return response.data;
+};
+
+export const registerUser = async (username, password) => {
+  const response = await api.post('/auth/register', { username, password });
+  return response.data;
+};
+
 // Chat API
 export const sendQuery = async (query, topK = 3, selectedFiles = null, sessionId = null) => {
   const response = await api.post('/chat', {

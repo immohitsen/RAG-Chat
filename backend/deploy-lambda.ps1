@@ -107,7 +107,13 @@ if (!$GROQ_API_KEY -or !$MONGODB_URI) {
     }
 }
 
-$envVars = "{GROQ_API_KEY=$GROQ_API_KEY,MONGODB_URI=$MONGODB_URI}"
+$JWT_SECRET = $env:JWT_SECRET
+if (!$JWT_SECRET) {
+    Get-Content "../.env" | ForEach-Object {
+        if ($_ -match '^JWT_SECRET=(.*)$') { $JWT_SECRET = $matches[1].Trim('"') }
+    }
+}
+$envVars = "{GROQ_API_KEY=$GROQ_API_KEY,MONGODB_URI=$MONGODB_URI,JWT_SECRET=$JWT_SECRET}"
 
 try {
     $functionExists = aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME --region $AWS_REGION 2>$null

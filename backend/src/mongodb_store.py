@@ -30,21 +30,22 @@ class MongoDBVectorStore:
         
         print(f"[MongoDB Store] Initialized with collection: {collection_name}")
 
-    def add_documents(self, documents: List[Any]):
+    def add_documents(self, documents: List[Any], user_id: str = None):
         """Chunk, embed and store documents in MongoDB"""
         chunks = self.emb_pipe.chunk_documents(documents)
         embeddings = self.emb_pipe.embed_chunks(chunks)
-        
+
         records = []
         for i, chunk in enumerate(chunks):
             record = {
                 "text": chunk.page_content,
                 "metadata": chunk.metadata,
                 "embedding": embeddings[i].tolist(),
-                "source": chunk.metadata.get("source", "Unknown")
+                "source": chunk.metadata.get("source", "Unknown"),
+                "user_id": user_id
             }
             records.append(record)
-            
+
         if records:
             self.collection.insert_many(records)
             print(f"[MongoDB Store] Inserted {len(records)} chunks into Atlas.")
@@ -90,15 +91,18 @@ class MongoDBVectorStore:
             
         return formatted_results
 
-    def delete_by_filename(self, filename: str):
+    def delete_by_filename(self, filename: str, user_id: str = None):
         """Delete all chunks belonging to a specific filename"""
         import re
-        result = self.collection.delete_many({
+        query = {
             "$or": [
                 {"source": filename},
                 {"source": {"$regex": re.escape(filename)}},
             ]
-        })
+        }
+        if user_id:
+            query["user_id"] = user_id
+        result = self.collection.delete_many(query)
         print(f"[MongoDB Store] Deleted {result.deleted_count} chunks for {filename}.")
         return result.deleted_count
 
@@ -107,13 +111,19 @@ class MongoDBVectorStore:
         total = self.collection.count_documents({})
         return {"total_vectors": total, "loaded": True}
 
-    def get_unique_files(self):
+    def get_unique_files(self, user_id: str = None):
         """Get list of unique files with chunk counts"""
-        pipeline = [
-            {"$group": {"_id": "$source", "chunk_count": {"$sum": 1}}}
-        ]
+        match_stage = {}
+        if user_id:
+            match_stage["user_id"] = user_id
+
+        pipeline = []
+        if match_stage:
+            pipeline.append({"$match": match_stage})
+        pipeline.append({"$group": {"_id": "$source", "chunk_count": {"$sum": 1}}})
+
         results = list(self.collection.aggregate(pipeline))
-        
+
         files = []
         for res in results:
             source = res["_id"] or "Unknown"

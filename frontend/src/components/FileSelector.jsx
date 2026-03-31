@@ -10,7 +10,11 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    fetchFiles();
+    fetchFiles(true);
+  }, []);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) fetchFiles(false);
   }, [refreshTrigger]);
 
   useEffect(() => {
@@ -23,14 +27,16 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const fetchFiles = async () => {
+  const fetchFiles = async (isInitial = false) => {
     try {
       const response = await listIndexedFiles();
       const fileList = response.files || [];
       setFiles(fileList);
-      const allNames = fileList.map(f => f.filename);
-      setSelectedFiles(allNames);
-      onSelectionChange(allNames);
+      if (isInitial) {
+        const allNames = fileList.map(f => f.filename);
+        setSelectedFiles(allNames);
+        onSelectionChange(allNames);
+      }
     } catch (err) {
       console.error('Failed to fetch files:', err);
     } finally {

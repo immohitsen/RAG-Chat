@@ -10,6 +10,7 @@ def generate_uuid() -> str:
 class SessionModel(BaseModel):
     id: str = Field(default_factory=generate_uuid, alias="_id")
     title: str = Field(..., description="Auto-generated title from first query")
+    user_id: Optional[str] = Field(default=None, description="Owner user ID")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:

@@ -1,5 +1,6 @@
 import React from 'react';
 import ChatInterface from './components/ChatInterface';
+import { AuthProvider } from './context/AuthContext';
 import './index.css';
 
 function App() {
@@ -19,7 +20,9 @@ function App() {
 
       {/* App content — fills the fixed container */}
       <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%' }}>
-        <ChatInterface />
+        <AuthProvider>
+          <ChatInterface />
+        </AuthProvider>
       </div>
     </div>
   );

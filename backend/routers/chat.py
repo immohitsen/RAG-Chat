@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models.schemas import ChatRequest, ChatResponse, Source
 from services.rag_service import rag_service
 from database import get_db
 from models.db_models import MessageModel
+from auth.dependencies import get_current_user
 import time
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     """
     Main RAG endpoint - Query the knowledge base
 

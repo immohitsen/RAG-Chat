@@ -5,7 +5,9 @@ import CitationCard from './CitationCard';
 import FileUpload from './FileUpload';
 import FileSelector from './FileSelector';
 import ChatHistory from './ChatHistory';
-import { 
+import AuthModal from './AuthModal';
+import { useAuth } from '../context/AuthContext';
+import {
   PaperPlaneRightIcon,
   BookOpenIcon,
   LightningIcon,
@@ -14,11 +16,15 @@ import {
   DiamondsFourIcon ,
   PlusIcon,
   ListIcon,
-  NotePencilIcon
+  NotePencilIcon,
+  UserCircleIcon,
+  SignOutIcon
 } from '@phosphor-icons/react';
 
 
 const ChatInterface = () => {
+  const { user, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -217,11 +223,17 @@ const ChatInterface = () => {
           <div className="flex flex-col flex-1 min-h-0">
             <p className="text-xs font-semibold mb-3 px-2 flex-shrink-0 tracking-wider" style={{ color: 'var(--text-muted)' }}>RECENT CHATS</p>
             <div className="flex-1 overflow-y-auto px-1">
-              <ChatHistory 
-                currentSessionId={currentSessionId} 
-                onSelectSession={handleSelectSession} 
-                refreshTrigger={refreshTrigger} 
-              />
+              {user ? (
+                <ChatHistory
+                  currentSessionId={currentSessionId}
+                  onSelectSession={handleSelectSession}
+                  refreshTrigger={refreshTrigger}
+                />
+              ) : (
+                <div className="px-2 py-3 text-xs rounded-xl text-center" style={{ color: 'var(--text-muted)', background: 'var(--bg-surface)' }}>
+                  <button onClick={() => setShowAuthModal(true)} className="text-purple-400 hover:underline">Login</button> to see your chats
+                </div>
+              )}
             </div>
           </div>
 
@@ -261,7 +273,7 @@ const ChatInterface = () => {
             </span>
           </div>
           <div className="flex items-center gap-3 md:gap-5">
-            <FileSelector asHeaderIcon={true} onSelectionChange={setSelectedFiles} refreshTrigger={refreshTrigger} />
+            {user && <FileSelector asHeaderIcon={true} onSelectionChange={setSelectedFiles} refreshTrigger={refreshTrigger} />}
             <div className="hidden sm:block w-px h-6 bg-gray-200" />
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -269,6 +281,23 @@ const ChatInterface = () => {
                 {isMobile ? 'Llama 3.1' : 'Llama 3.1 • Groq'}
               </span>
             </div>
+            <div className="hidden sm:block w-px h-6 bg-gray-200" />
+            {user ? (
+              <div className="flex items-center gap-2">
+                <UserCircleIcon size={18} className="text-purple-400" />
+                <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{user.username}</span>
+                <button onClick={logout} className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors" title="Logout">
+                  <SignOutIcon size={16} className="text-gray-400 hover:text-red-400" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-4 py-1.5 rounded-xl text-xs font-medium text-white btn-gradient transition-opacity hover:opacity-90"
+              >
+                Login
+              </button>
+            )}
           </div>
         </header>
 
@@ -333,11 +362,12 @@ const ChatInterface = () => {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isMobile ? "Ask anything..." : "Ask With Context"}
+              onClick={() => { if (!user) setShowAuthModal(true); }}
+              placeholder={user ? (isMobile ? "Ask anything..." : "Ask With Context") : "Login to start chatting..."}
               className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500"
               style={{ color: 'var(--text-primary)', minHeight: '50px', mdMinHeight: '60px', maxHeight: '180px' }}
               rows={1}
-              disabled={loading}
+              disabled={loading || !user}
               onInput={e => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
@@ -408,6 +438,9 @@ const ChatInterface = () => {
           </p>
         </div>
       </div>
+
+      {/* ── Auth Modal ── */}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
 
       {/* ── Upload Modal ── */}
       {showUpload && (
