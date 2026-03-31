@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { uploadDocument } from '../services/api';
-import { UploadSimple, X, FileText, CheckCircle } from '@phosphor-icons/react';
+import { UploadSimple, X, CheckCircle, FileText } from '@phosphor-icons/react';
 
 const FileUpload = ({ onUploadSuccess, onClose, onProgress, onBusyStateChange }) => {
   const [uploading, setUploading] = useState(false);
@@ -80,7 +80,7 @@ const FileUpload = ({ onUploadSuccess, onClose, onProgress, onBusyStateChange })
   const handleDragLeave = () => setDragOver(false);
 
   return (
-    <div className="glass-strong rounded-2xl p-6 w-[480px] relative drop-shadow-sm" style={{ border: '1px solid rgba(255,255,255,0.12) border-radius: 16px' }}>
+    <div className="glass-strong rounded-2xl p-6 w-[92vw] md:w-[480px] max-w-lg relative border-2 border-gray-700">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
