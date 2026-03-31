@@ -18,15 +18,23 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     try:
         start_time = time.time()
 
+        # Fetch chat history for this session
+        chat_history = []
+        if request.session_id:
+            db = get_db()
+            if db is not None:
+                cursor = db.messages.find({"session_id": request.session_id}).sort("created_at", 1)
+                msgs = await cursor.to_list(length=1000)
+                chat_history = [{"role": m["role"], "content": m["content"]} for m in msgs]
+
         # Intent classification — chitchat goes directly to LLM, skip RAG
         intent = rag_service.classify_intent(request.query)
 
         if intent == "chitchat":
-            answer, sources_list = rag_service.respond_direct(request.query, "chitchat")
+            answer, sources_list = rag_service.respond_direct(request.query, "chitchat", chat_history)
         else:
-            # knowledge → retrieval + similarity threshold (fallback handled inside query())
             selected_files = getattr(request, 'selected_files', None)
-            answer, sources_list = rag_service.query(request.query, request.top_k, selected_files)
+            answer, sources_list = rag_service.query(request.query, request.top_k, selected_files, chat_history)
 
         query_time = round(time.time() - start_time, 2)
 
