@@ -21,28 +21,43 @@ export const sendQuery = async (query, topK = 3, selectedFiles = null, sessionId
   return response.data;
 };
 
-// Upload API - S3 presigned URL flow
+// Upload API - auto switches between local and S3 based on backend response
 export const uploadDocument = async (file, onProgress) => {
-  // Step 1: Get presigned PUT URL
-  const { data: { upload_url, s3_key } } = await api.post('/upload/presigned-url', {
+  // Step 1: Ask backend which upload mode to use
+  const { data: { upload_url, s3_key, use_local } } = await api.post('/upload/presigned-url', {
     filename: file.name,
     content_type: file.type || 'application/octet-stream',
   });
 
-  // Step 2: Upload directly to S3 via PUT
-  await axios.put(upload_url, file, {
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    onUploadProgress: (progressEvent) => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total
-      );
-      if (onProgress) onProgress(percentCompleted);
-    },
-  });
+  let finalS3Key;
+
+  if (use_local) {
+    // Local mode: upload directly to backend
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data: localData } = await axios.post(`${API_URL}/upload/local`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        if (onProgress) onProgress(percentCompleted);
+      },
+    });
+    finalS3Key = localData.s3_key;
+  } else {
+    // AWS mode: upload directly to S3 via presigned PUT URL
+    await axios.put(upload_url, file, {
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        if (onProgress) onProgress(percentCompleted);
+      },
+    });
+    finalS3Key = s3_key;
+  }
 
   // Step 3: Tell backend to process the file
   const response = await api.post('/upload/process', {
-    s3_key,
+    s3_key: finalS3Key,
     filename: file.name,
   });
 
@@ -70,6 +85,12 @@ export const listIndexedFiles = async () => {
 // Delete file
 export const deleteFile = async (filename) => {
   const response = await api.delete(`/files/${encodeURIComponent(filename)}`);
+  return response.data;
+};
+
+// Download file
+export const downloadFile = async (filename) => {
+  const response = await api.get(`/files/${encodeURIComponent(filename)}/download`);
   return response.data;
 };
 

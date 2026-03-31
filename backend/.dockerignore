@@ -22,6 +22,7 @@ build
 .DS_Store
 data/
 faiss_store/
+src/vectorstore.py
 *.zip
 *.tar.gz
 node_modules

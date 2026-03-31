@@ -60,14 +60,14 @@ class RAGServiceWrapper:
         Returns: (answer, sources_list)
         """
         # Get detailed results from MongoDB
-        results = self.rag_search.vectorstore.search(query_text, top_k=top_k * 3 if selected_files else top_k)
+        results = self.rag_search.vectorstore.search(query_text, top_k=top_k * 20 if selected_files else top_k)
 
         # Filter by selected files if provided
         if selected_files:
             filtered_results = []
             for r in results:
                 source = r.get("metadata", {}).get("source", "")
-                if any(file in source for file in selected_files):
+                if any(os.path.basename(source) == file for file in selected_files):
                     filtered_results.append(r)
             results = filtered_results[:top_k]
 

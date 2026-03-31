@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "🚀 Starting AWS Lambda Deployment..." -ForegroundColor Green
 
 # Configuration
-$AWS_REGION = if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-east-1" }
+$AWS_REGION = if ($env:AWS_REGION) { $env:AWS_REGION } else { "ap-south-1" }
 $ECR_REPO_NAME = "rag-backend"
 $LAMBDA_FUNCTION_NAME = "rag-backend-api"
 $LAMBDA_ROLE_NAME = "rag-lambda-execution-role"

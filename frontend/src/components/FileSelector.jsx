@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { listIndexedFiles, deleteFile } from '../services/api';
-import { Folders, CaretDown, Trash, CheckSquare, Square, FileText, Hash, Folder } from '@phosphor-icons/react';
+import { listIndexedFiles, deleteFile, downloadFile } from '../services/api';
+import { Folders, CaretDown, Trash, CheckSquare, Square, FileText, Hash, Folder, DownloadSimple } from '@phosphor-icons/react';
 
 const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
   const [files, setFiles] = useState([]);
@@ -67,6 +67,16 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
       await fetchFiles();
     } catch (err) {
       alert(`Failed to delete: ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleDownload = async (filename, e) => {
+    e.stopPropagation();
+    try {
+      const { download_url } = await downloadFile(filename);
+      window.open(download_url, '_blank');
+    } catch (err) {
+      alert(`Failed to download: ${err.response?.data?.detail || err.message}`);
     }
   };
 
@@ -164,13 +174,22 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
                       </p>
                     </div>
 
-                    <button
-                      onClick={(e) => handleDelete(file.filename, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded-lg transition-all hover:bg-red-500/10"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <Trash size={12} className="hover:text-red-400 transition-colors" />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={(e) => handleDownload(file.filename, e)}
+                        className="p-1 rounded-lg hover:bg-purple-500/10"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <DownloadSimple size={12} className="hover:text-purple-400 transition-colors" />
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(file.filename, e)}
+                        className="p-1 rounded-lg hover:bg-red-500/10"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <Trash size={12} className="hover:text-red-400 transition-colors" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
