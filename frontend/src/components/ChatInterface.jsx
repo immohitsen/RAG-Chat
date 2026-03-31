@@ -152,20 +152,21 @@ const ChatInterface = () => {
   return (
     <div className="flex h-full w-full overflow-hidden bg-white">
       {/* ── Sidebar Backdrop (Mobile) ── */}
-      {isMobile && isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all duration-300 ${
+          isMobile && isSidebarOpen ? 'opacity-100 pointer-events-auto visibility-visible' : 'opacity-0 pointer-events-none invisible'
+        }`}
+        onClick={() => setIsSidebarOpen(false)}
+      />
 
       {/* ── Sidebar ── */}
       <aside className={`
-        flex-shrink-0 flex flex-col gap-5 border-r transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden z-50
-        ${isMobile ? 'fixed inset-y-0 left-0 bg-white shadow-2xl' : 'relative'}
-        ${isSidebarOpen ? 'w-72 p-4' : isMobile ? 'w-0 p-0 border-none' : 'w-[76px] py-4 px-2 items-center'}
+        flex-shrink-0 flex flex-col gap-5 border-r z-50 overflow-hidden
+        ${isMobile 
+          ? `fixed inset-y-0 left-0 w-72 bg-white shadow-2xl p-4 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}` 
+          : `relative transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'w-72 p-4' : 'w-[76px] py-4 px-2 items-center'}`}
       `}
-        style={{ borderColor: 'var(--border-subtle)', background: isMobile ? '#fff' : 'var(--bg-surface)' }}>
+        style={!isMobile ? { borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' } : {}}>
 
         <div className={`flex w-full ${isSidebarOpen ? 'justify-between' : 'justify-center'} px-1 items-center`}>
           {/* <button 

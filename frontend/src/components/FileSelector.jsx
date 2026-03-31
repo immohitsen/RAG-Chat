@@ -122,7 +122,7 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
           {/* Blur backdrop (just for the dropdown area feel) */}
           <div className="fixed inset-0 z-20" onClick={() => setShowDropdown(false)} />
 
-          <div className={`absolute top-full ${asHeaderIcon ? 'right-0 shadow-2xl' : 'left-0'} mt-2 w-72 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
+          <div className={`absolute top-full ${asHeaderIcon ? 'right-[-40px] md:right-0 shadow-2xl' : 'left-0'} mt-2 w-72 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
             style={{ border: '1px solid var(--border-subtle)' }}>
 
             {/* Header */}
