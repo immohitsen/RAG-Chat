@@ -86,25 +86,28 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-        <div className="w-3 h-3 rounded-full border border-purple-500 border-t-transparent animate-spin" />
-        Loading files...
-      </div>
-    );
+  // For inline (non-header) mode: show loading/empty states as before
+  if (!asHeaderIcon) {
+    if (loading) {
+      return (
+        <div className="flex items-center gap-2 px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="w-3 h-3 rounded-full border border-purple-500 border-t-transparent animate-spin" />
+          Loading files...
+        </div>
+      );
+    }
+
+    if (files.length === 0) {
+      return (
+        <div className="px-3 py-2.5 glass rounded-xl text-xs" style={{ color: 'var(--text-muted)' }}>
+          <Folders size={14} className="inline mr-2 text-purple-400" />
+          No documents indexed yet
+        </div>
+      );
+    }
   }
 
-  if (files.length === 0) {
-    return (
-      <div className="px-3 py-2.5 glass rounded-xl text-xs" style={{ color: 'var(--text-muted)' }}>
-        <Folders size={14} className="inline mr-2 text-purple-400" />
-        No documents indexed yet
-      </div>
-    );
-  }
-
-  const allSelected = selectedFiles.length === files.length;
+  const allSelected = files.length > 0 && selectedFiles.length === files.length;
   const label = allSelected ? 'All Files' : `${selectedFiles.length} of ${files.length}`;
 
   return (
@@ -113,10 +116,13 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
       {asHeaderIcon ? (
         <button
           onClick={() => setShowDropdown(o => !o)}
-          className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
+          className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity relative"
         >
-          <Folder size={18} className="text-gray-500" />
+          <Folder size={18} className={files.length === 0 ? 'text-gray-400' : 'text-gray-500'} />
           <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Files</span>
+          {files.length === 0 && !loading && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" />
+          )}
         </button>
       ) : (
         <button
@@ -138,18 +144,33 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
           {/* Blur backdrop (just for the dropdown area feel) */}
           <div className="fixed inset-0 z-20" onClick={() => setShowDropdown(false)} />
 
-          <div className={`absolute top-full ${asHeaderIcon ? 'right-[-40px] md:right-0 shadow-2xl' : 'left-0'} mt-2 w-72 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
+          <div className={`${asHeaderIcon ? 'fixed top-[56px] left-2 right-2 md:absolute md:top-full md:left-auto md:right-0 md:w-72 shadow-2xl' : 'absolute top-full left-0 w-72'} mt-0 md:mt-2 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
             style={{ border: '1px solid var(--border-subtle)' }}>
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
               <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Select Documents</span>
+              {files.length > 0 && (
               <div className="flex items-center gap-3">
                 <button onClick={selectAll} className="text-xs text-purple-400 hover:text-purple-300 transition-colors">All</button>
                 <span style={{ color: 'var(--border-subtle)' }}>|</span>
                 <button onClick={deselectAll} className="text-xs" style={{ color: 'var(--text-muted)' }}>None</button>
               </div>
+              )}
             </div>
+
+            {/* Loading / Empty / File List */}
+            {loading ? (
+              <div className="flex items-center gap-2 px-4 py-5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <div className="w-3 h-3 rounded-full border border-purple-500 border-t-transparent animate-spin" />
+                Loading files...
+              </div>
+            ) : files.length === 0 ? (
+              <div className="px-4 py-5 text-xs flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                <Folders size={14} className="text-purple-400 flex-shrink-0" />
+                No documents indexed yet
+              </div>
+            ) : null}
 
             {/* File List */}
             <div className="max-h-56 overflow-y-auto py-2">
@@ -202,6 +223,7 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
             </div>
 
             {/* Footer */}
+            {files.length > 0 && (
             <div className="px-4 py-2.5 border-t flex items-center justify-between"
               style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -214,6 +236,7 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
                 ))}
               </div>
             </div>
+            )}
           </div>
         </>
       )}

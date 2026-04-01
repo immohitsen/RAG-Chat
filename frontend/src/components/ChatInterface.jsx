@@ -25,6 +25,8 @@ import {
 const ChatInterface = () => {
   const { user, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,6 +43,17 @@ const ChatInterface = () => {
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Responsive detection
   useEffect(() => {
@@ -283,12 +296,35 @@ const ChatInterface = () => {
             </div>
             <div className="hidden sm:block w-px h-6 bg-gray-200" />
             {user ? (
-              <div className="flex items-center gap-2">
-                <UserCircleIcon size={18} className="text-purple-400" />
-                <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{user.username}</span>
-                <button onClick={logout} className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors" title="Logout">
-                  <SignOutIcon size={16} className="text-gray-400 hover:text-red-400" />
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setShowUserMenu(o => !o)}
+                  className="p-1 rounded-full hover:opacity-80 transition-opacity"
+                  title={user.username}
+                >
+                  <UserCircleIcon size={22} className="text-purple-400" />
                 </button>
+
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setShowUserMenu(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-44 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in"
+                      style={{ border: '1px solid var(--border-subtle)' }}>
+                      <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.username}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Logged in</p>
+                      </div>
+                      <button
+                        onClick={() => { logout(); setShowUserMenu(false); }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs transition-colors hover:bg-red-500/10 text-left"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        <SignOutIcon size={14} className="text-red-400" />
+                        Logout
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <button
