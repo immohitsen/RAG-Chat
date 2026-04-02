@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendQuery, createSession, getSessionMessages } from '../services/api';
+import { cacheGet, cacheSet, cacheDel } from '../services/cache';
 import MessageBubble from './MessageBubble';
 import CitationCard from './CitationCard';
 import FileUpload from './FileUpload';
@@ -98,6 +99,7 @@ const ChatInterface = () => {
         const newSession = await createSession(title);
         activeSessionId = newSession._id;
         setCurrentSessionId(activeSessionId);
+        cacheDel('sessions'); // force sidebar to refetch fresh
         setRefreshTrigger(t => t + 1);
       } catch (err) {
         console.error("Failed to create session", err);
@@ -112,7 +114,11 @@ const ChatInterface = () => {
         sources: response.sources,
         metadata: response.metadata,
       };
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => {
+        const next = [...prev, aiMessage];
+        if (activeSessionId) cacheSet(`session_${activeSessionId}`, next);
+        return next;
+      });
       setStats(prev => ({
         queries: prev.queries + 1,
         sources: prev.sources + (response.sources?.length || 0),
@@ -152,11 +158,25 @@ const ChatInterface = () => {
       return;
     }
     setCurrentSessionId(sessionId);
-    setLoading(true);
     if (isMobile) setIsSidebarOpen(false);
+
+    // Show cached messages instantly
+    const cached = cacheGet(`session_${sessionId}`);
+    if (cached) {
+      setMessages(cached);
+      setStats({
+        queries: cached.filter(m => m.role === 'user').length,
+        sources: cached.reduce((acc, m) => acc + (m.sources?.length || 0), 0)
+      });
+    } else {
+      setLoading(true);
+    }
+
+    // Revalidate in background
     try {
       const msgs = await getSessionMessages(sessionId);
       setMessages(msgs);
+      cacheSet(`session_${sessionId}`, msgs);
       setStats({
         queries: msgs.filter(m => m.role === 'user').length,
         sources: msgs.reduce((acc, m) => acc + (m.sources?.length || 0), 0)
