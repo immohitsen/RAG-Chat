@@ -44,6 +44,7 @@ const ChatInterface = () => {
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const pendingSessionRef = useRef(null);
 
   // Close user menu on outside click
   useEffect(() => {
@@ -158,6 +159,7 @@ const ChatInterface = () => {
       return;
     }
     setCurrentSessionId(sessionId);
+    pendingSessionRef.current = sessionId;
     if (isMobile) setIsSidebarOpen(false);
 
     // Show cached messages instantly
@@ -172,9 +174,10 @@ const ChatInterface = () => {
       setLoading(true);
     }
 
-    // Revalidate in background
+    // Revalidate in background — discard if user switched session before this resolves
     try {
       const msgs = await getSessionMessages(sessionId);
+      if (pendingSessionRef.current !== sessionId) return;
       setMessages(msgs);
       cacheSet(`session_${sessionId}`, msgs);
       setStats({
@@ -184,7 +187,7 @@ const ChatInterface = () => {
     } catch (err) {
       console.error("Failed to load session", err);
     } finally {
-      setLoading(false);
+      if (pendingSessionRef.current === sessionId) setLoading(false);
     }
   };
 
@@ -263,7 +266,7 @@ const ChatInterface = () => {
                   refreshTrigger={refreshTrigger}
                 />
               ) : (
-                <div className="px-2 py-3 text-xs rounded-xl text-center" style={{ color: 'var(--text-muted)', background: 'var(--bg-surface)' }}>
+                <div className="px-2 py-3 text-sm rounded-xl text-center" style={{ color: 'var(--text-muted)', background: 'var(--bg-surface)' }}>
                   <button onClick={() => setShowAuthModal(true)} className="text-purple-400 hover:underline">Login</button> to see your chats
                 </div>
               )}
@@ -335,7 +338,7 @@ const ChatInterface = () => {
                         <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Logged in</p>
                       </div>
                       <button
-                        onClick={() => { logout(); setShowUserMenu(false); }}
+                        onClick={() => { logout(); handleNewChat(); setShowUserMenu(false); }}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-xs transition-colors hover:bg-red-500/10 text-left"
                         style={{ color: 'var(--text-secondary)' }}
                       >

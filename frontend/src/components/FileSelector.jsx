@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { listIndexedFiles, deleteFile, downloadFile } from '../services/api';
 import { cacheGet, cacheSet, cacheDel } from '../services/cache';
-import { Folders, CaretDown, Trash, CheckSquare, Square, FileText, Hash, Folder, DownloadSimple } from '@phosphor-icons/react';
+import { Folders, CaretDown, Trash, CheckSquare, Square, Hash, Folder, DownloadSimple } from '@phosphor-icons/react';
 
 const FILES_TTL = 2 * 60 * 1000; // 2 minutes
 
@@ -11,7 +11,10 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     const cached = cacheGet('files') || [];
     return cached.map(f => f.filename);
   });
-  const [loading, setLoading] = useState(() => (cacheGet('files') || []).length === 0);
+  const [loading, setLoading] = useState(() => {
+    const cached = cacheGet('files');
+    return !cached || cached.length === 0;
+  });
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -83,6 +86,11 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     try {
       await deleteFile(filename);
       cacheDel('files');
+      setSelectedFiles(prev => {
+        const next = prev.filter(f => f !== filename);
+        onSelectionChange(next);
+        return next;
+      });
       await fetchFiles();
     } catch (err) {
       alert(`Failed to delete: ${err.response?.data?.detail || err.message}`);
