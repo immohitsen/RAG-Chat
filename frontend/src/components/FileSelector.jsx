@@ -6,18 +6,21 @@ import { Folders, CaretDown, Trash, CheckSquare, Square, FileText, Hash, Folder,
 const FILES_TTL = 2 * 60 * 1000; // 2 minutes
 
 const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
-  const cachedFiles = cacheGet('files') || [];
-  const [files, setFiles] = useState(cachedFiles);
+  const [files, setFiles] = useState(() => cacheGet('files') || []);
   const [selectedFiles, setSelectedFiles] = useState(() => {
-    const names = cachedFiles.map(f => f.filename);
-    if (names.length > 0) onSelectionChange(names);
-    return names;
+    const cached = cacheGet('files') || [];
+    return cached.map(f => f.filename);
   });
-  const [loading, setLoading] = useState(cachedFiles.length === 0);
+  const [loading, setLoading] = useState(() => (cacheGet('files') || []).length === 0);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
+    // If we had cached files, notify parent immediately without waiting for API
+    const cached = cacheGet('files');
+    if (cached && cached.length > 0) {
+      onSelectionChange(cached.map(f => f.filename));
+    }
     fetchFiles(true);
   }, []);
 

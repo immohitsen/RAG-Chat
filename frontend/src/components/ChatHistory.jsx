@@ -6,8 +6,11 @@ import { TrashIcon } from '@phosphor-icons/react';
 const SESSIONS_TTL = 5 * 60 * 1000; // 5 minutes
 
 const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
-  const [sessions, setSessions] = useState(() => cacheGet('sessions') || []);
-  const [loading, setLoading] = useState(!cacheGet('sessions'));
+  const [sessions, setSessions] = useState(() => {
+    const cached = cacheGet('sessions');
+    return cached || [];
+  });
+  const [loading, setLoading] = useState(() => !cacheGet('sessions'));
 
   useEffect(() => {
     fetchSessions();
