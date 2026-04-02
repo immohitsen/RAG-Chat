@@ -334,12 +334,12 @@ const ChatInterface = () => {
                     <div className="absolute right-0 top-full mt-2 w-44 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in"
                       style={{ border: '1px solid var(--border-subtle)' }}>
                       <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.username}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Logged in</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.username}</p>
+                        <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Logged in</p>
                       </div>
                       <button
                         onClick={() => { logout(); handleNewChat(); setShowUserMenu(false); }}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs transition-colors hover:bg-red-500/10 text-left"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-red-500/10 text-left"
                         style={{ color: 'var(--text-secondary)' }}
                       >
                         <SignOutIcon size={14} className="text-red-400" />
