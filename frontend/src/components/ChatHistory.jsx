@@ -43,7 +43,7 @@ const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
     }
   };
 
-  if (loading) {
+  if (loading && sessions.length === 0) {
     return <div className="text-xs text-slate-400 px-2 py-4">Loading history...</div>;
   }
 
