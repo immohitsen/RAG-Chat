@@ -1,16 +1,12 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { getSessions, deleteSession } from '../services/api';
-import { cacheGet, cacheSet, cacheDel } from '../services/cache';
 import { TrashIcon } from '@phosphor-icons/react';
 
-const SESSIONS_TTL = 5 * 60 * 1000; // 5 minutes
-
 const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
-  const [sessions, setSessions] = useState(() => {
-    const cached = cacheGet('sessions');
-    return cached || [];
-  });
-  const [loading, setLoading] = useState(() => !cacheGet('sessions'));
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSessions();
@@ -22,7 +18,6 @@ const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
     try {
       const data = await getSessions();
       setSessions(data || []);
-      cacheSet('sessions', data || [], SESSIONS_TTL);
     } catch (err) {
       console.error('Failed to fetch sessions:', err);
     } finally {
@@ -35,8 +30,6 @@ const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
     if (!confirm('Are you sure you want to delete this chat history?')) return;
     try {
       await deleteSession(sessionId);
-      cacheDel('sessions');
-      cacheDel(`session_${sessionId}`);
       if (currentSessionId === sessionId) {
         onSelectSession(null);
       }

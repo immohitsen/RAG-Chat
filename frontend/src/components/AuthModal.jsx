@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { X, Eye, EyeSlash } from '@phosphor-icons/react';

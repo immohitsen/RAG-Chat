@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { sendQuery, createSession, getSessionMessages } from '../services/api';
-import { cacheGet, cacheSet, cacheDel } from '../services/cache';
 import MessageBubble from './MessageBubble';
 import CitationCard from './CitationCard';
 import FileUpload from './FileUpload';
@@ -85,6 +86,14 @@ const ChatInterface = () => {
     }
   }, [loading]);
 
+  // Auto-resize textarea — runs after DOM reflects new value (handles paste correctly)
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+  }, [input]);
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     const userMessage = { role: 'user', content: input };
@@ -100,7 +109,6 @@ const ChatInterface = () => {
         const newSession = await createSession(title);
         activeSessionId = newSession._id;
         setCurrentSessionId(activeSessionId);
-        cacheDel('sessions'); // force sidebar to refetch fresh
         setRefreshTrigger(t => t + 1);
       } catch (err) {
         console.error("Failed to create session", err);
@@ -115,11 +123,7 @@ const ChatInterface = () => {
         sources: response.sources,
         metadata: response.metadata,
       };
-      setMessages(prev => {
-        const next = [...prev, aiMessage];
-        if (activeSessionId) cacheSet(`session_${activeSessionId}`, next);
-        return next;
-      });
+      setMessages(prev => [...prev, aiMessage]);
       setStats(prev => ({
         queries: prev.queries + 1,
         sources: prev.sources + (response.sources?.length || 0),
@@ -161,25 +165,12 @@ const ChatInterface = () => {
     setCurrentSessionId(sessionId);
     pendingSessionRef.current = sessionId;
     if (isMobile) setIsSidebarOpen(false);
+    setLoading(true);
 
-    // Show cached messages instantly
-    const cached = cacheGet(`session_${sessionId}`);
-    if (cached) {
-      setMessages(cached);
-      setStats({
-        queries: cached.filter(m => m.role === 'user').length,
-        sources: cached.reduce((acc, m) => acc + (m.sources?.length || 0), 0)
-      });
-    } else {
-      setLoading(true);
-    }
-
-    // Revalidate in background — discard if user switched session before this resolves
     try {
       const msgs = await getSessionMessages(sessionId);
       if (pendingSessionRef.current !== sessionId) return;
       setMessages(msgs);
-      cacheSet(`session_${sessionId}`, msgs);
       setStats({
         queries: msgs.filter(m => m.role === 'user').length,
         sources: msgs.reduce((acc, m) => acc + (m.sources?.length || 0), 0)
@@ -424,13 +415,9 @@ const ChatInterface = () => {
               onClick={() => { if (!user) setShowAuthModal(true); }}
               placeholder={user ? (isMobile ? "Ask anything..." : "Ask With Context") : "Login to start chatting..."}
               className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500"
-              style={{ color: 'var(--text-primary)', minHeight: '50px', mdMinHeight: '60px', maxHeight: '180px' }}
+              style={{ color: 'var(--text-primary)', minHeight: '50px', maxHeight: '180px', overflowY: 'auto' }}
               rows={1}
               disabled={loading || !user}
-              onInput={e => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
-              }}
             />
             
             <div className="flex items-center justify-between w-full mt-1 px-1 pb-1">

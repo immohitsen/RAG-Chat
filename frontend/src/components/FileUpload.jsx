@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import { uploadDocument } from '../services/api';
 import { UploadSimple, X, CheckCircle, FileText } from '@phosphor-icons/react';

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { CaretDown, FileText } from '@phosphor-icons/react';
 

@@ -1,29 +1,17 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { listIndexedFiles, deleteFile, downloadFile } from '../services/api';
-import { cacheGet, cacheSet, cacheDel } from '../services/cache';
 import { Folders, CaretDown, Trash, CheckSquare, Square, Hash, Folder, DownloadSimple } from '@phosphor-icons/react';
 
-const FILES_TTL = 2 * 60 * 1000; // 2 minutes
-
 const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
-  const [files, setFiles] = useState(() => cacheGet('files') || []);
-  const [selectedFiles, setSelectedFiles] = useState(() => {
-    const cached = cacheGet('files') || [];
-    return cached.map(f => f.filename);
-  });
-  const [loading, setLoading] = useState(() => {
-    const cached = cacheGet('files');
-    return !cached || cached.length === 0;
-  });
+  const [files, setFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    // If we had cached files, notify parent immediately without waiting for API
-    const cached = cacheGet('files');
-    if (cached && cached.length > 0) {
-      onSelectionChange(cached.map(f => f.filename));
-    }
     fetchFiles(true);
   }, []);
 
@@ -46,7 +34,6 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
       const response = await listIndexedFiles();
       const fileList = response.files || [];
       setFiles(fileList);
-      cacheSet('files', fileList, FILES_TTL);
       if (isInitial) {
         const allNames = fileList.map(f => f.filename);
         setSelectedFiles(allNames);
@@ -85,7 +72,6 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     if (!confirm(`Delete "${filename}"?`)) return;
     try {
       await deleteFile(filename);
-      cacheDel('files');
       setSelectedFiles(prev => {
         const next = prev.filter(f => f !== filename);
         onSelectionChange(next);
