@@ -46,19 +46,43 @@ const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const pendingSessionRef = useRef(null);
+  const isSendingRef = useRef(false);
   const touchStartXRef = useRef(null);
+  const touchCurrentXRef = useRef(null);
+  const touchStartTimeRef = useRef(null);
+
+  const EDGE_THRESHOLD = 50;
+  const SWIPE_THRESHOLD = 80;
+  const VELOCITY_THRESHOLD = 0.3;
 
   const handleTouchStart = (e) => {
+    if (!isMobile) return;
     touchStartXRef.current = e.touches[0].clientX;
+    touchCurrentXRef.current = e.touches[0].clientX;
+    touchStartTimeRef.current = Date.now();
   };
 
-  const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+  const handleTouchMove = (e) => {
+    if (!isMobile || touchStartXRef.current === null) return;
+    touchCurrentXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile || touchStartXRef.current === null) return;
+    const startX = touchStartXRef.current;
+    const endX = touchCurrentXRef.current;
+    const delta = endX - startX;
+    const velocity = Math.abs(delta) / (Date.now() - touchStartTimeRef.current);
     touchStartXRef.current = null;
-    if (!isMobile) return;
-    if (delta > 60 && !isSidebarOpen) setIsSidebarOpen(true);
-    if (delta < -60 && isSidebarOpen) setIsSidebarOpen(false);
+    touchCurrentXRef.current = null;
+    touchStartTimeRef.current = null;
+
+    if (startX <= EDGE_THRESHOLD && delta > SWIPE_THRESHOLD && (velocity > VELOCITY_THRESHOLD || delta > 120)) {
+      setIsSidebarOpen(true);
+    }
+    if (isSidebarOpen && delta < -SWIPE_THRESHOLD && (velocity > VELOCITY_THRESHOLD || delta < -120)) {
+      setIsSidebarOpen(false);
+    }
   };
 
   // Close user menu on outside click
@@ -109,7 +133,9 @@ const ChatInterface = () => {
   }, [input]);
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || isSendingRef.current) return;
+    isSendingRef.current = true;
+
     const userMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     const currentInput = input;
@@ -150,6 +176,7 @@ const ChatInterface = () => {
       }]);
     } finally {
       setLoading(false);
+      isSendingRef.current = false;
     }
   };
 
@@ -199,11 +226,14 @@ const ChatInterface = () => {
   return (
     <div className="flex h-full w-full overflow-hidden bg-white">
       {/* ── Sidebar Backdrop (Mobile) ── */}
-      <div 
+      <div
         className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all duration-300 ${
           isMobile && isSidebarOpen ? 'opacity-100 pointer-events-auto visibility-visible' : 'opacity-0 pointer-events-none invisible'
         }`}
         onClick={() => setIsSidebarOpen(false)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
 
       {/* ── Sidebar ── */}
@@ -299,6 +329,7 @@ const ChatInterface = () => {
       <div
         className="flex-1 flex flex-col min-w-0 relative"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
 
@@ -427,7 +458,7 @@ const ChatInterface = () => {
               onClick={() => { if (!user) setShowAuthModal(true); }}
               placeholder={user ? (isMobile ? "Ask anything..." : "Ask With Context") : "Login to start chatting..."}
               className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500"
-              style={{ color: 'var(--text-primary)', minHeight: '50px', maxHeight: '180px', overflowY: 'auto' }}
+              style={{ color: 'var(--text-primary)', minHeight: '50px', maxHeight: '50px', overflowY: 'auto' }}
               rows={1}
               disabled={loading || !user}
             />

@@ -27,6 +27,17 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
                 msgs = await cursor.to_list(length=1000)
                 chat_history = [{"role": m["role"], "content": m["content"]} for m in msgs]
 
+        # Save User Message to DB immediately if session_id is provided
+        if request.session_id:
+            db = get_db()
+            if db is not None:
+                user_msg = MessageModel(
+                    session_id=request.session_id,
+                    role="user",
+                    content=request.query
+                )
+                await db.messages.insert_one(user_msg.dict(by_alias=True))
+
         # Intent classification — chitchat goes directly to LLM, skip RAG
         intent = rag_service.classify_intent(request.query)
 
@@ -46,17 +57,10 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
             "model": "llama-3.1-8b-instant"
         }
 
-        # Save to DB if session_id is provided
+        # Save Assistant Message to DB if session_id is provided
         if request.session_id:
             db = get_db()
             if db is not None:
-                # 1. User Message
-                user_msg = MessageModel(
-                    session_id=request.session_id,
-                    role="user",
-                    content=request.query
-                )
-                # 2. Assistant Message
                 ai_msg = MessageModel(
                     session_id=request.session_id,
                     role="assistant",
@@ -64,10 +68,7 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
                     sources=sources_list,
                     metadata=metadata
                 )
-                await db.messages.insert_many([
-                    user_msg.dict(by_alias=True),
-                    ai_msg.dict(by_alias=True)
-                ])
+                await db.messages.insert_one(ai_msg.dict(by_alias=True))
 
         return ChatResponse(
             answer=answer,
