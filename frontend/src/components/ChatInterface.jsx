@@ -369,61 +369,55 @@ const ChatInterface = () => {
           </div>
         </header>
 
-        {/* Messages */}
-        <div 
-          className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center"
-          style={{ overflowAnchor: 'auto', willChange: 'transform' }}
-        >
-          <div className={`w-full max-w-3xl flex flex-col ${messages.length === 0 ? 'flex-1' :      'space-y-4'}`}>
-            {/* Welcome State */}
-            {messages.length === 0 && (
-            <div className="absolute top-[32%] left-0 right-0 flex justify-center animate-fade-in px-6 pointer-events-none z-0">
-              <div className="w-full max-w-3xl flex flex-col items-start gap-1">
-                <span className="text-xl md:text-2xl font-regular" style={{ color: 'var(--text-secondary)', fontFamily: 'inherit' }}>Hi Buddy</span>
-                <span className="text-3xl md:text-4xl leading-tight" style={{ color: 'var(--text-primary)', fontWeight: 400, fontFamily: 'inherit' }}>Where should we start?</span>
-              </div>
-            </div>
-          )}
+        {/* Top spacer — flex-1 when no messages, centers the welcome+input block */}
+        {messages.length === 0 && <div className="flex-1" />}
 
-          {/* Messages */}
-          {messages.map((msg, idx) => (
-            <div key={idx} className="animate-fade-in">
-              <MessageBubble message={msg} />
-              {msg.sources && <CitationCard sources={msg.sources} />}
-            </div>
-          ))}
-
-          {/* Loading */}
-          {loading && (
-            <div className="flex justify-start mb-4 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full btn-gradient flex items-center justify-center flex-shrink-0">
-                  <DiamondsFourIcon  size={14} className="text-white" />
+        {/* Messages — takes space only when messages exist */}
+        {messages.length > 0 && (
+          <div
+            className="flex-1 overflow-y-auto px-6 py-8 flex flex-col items-center"
+            style={{ overflowAnchor: 'auto', willChange: 'transform' }}
+          >
+            <div className="w-full max-w-3xl flex flex-col space-y-4">
+              {messages.map((msg, idx) => (
+                <div key={idx} className="animate-fade-in">
+                  <MessageBubble message={msg} />
+                  {msg.sources && <CitationCard sources={msg.sources} />}
                 </div>
-                <div className="glass msg-ai px-4 py-3">
-                  <div className="flex items-center gap-1">
-                    <span className="typing-dot" />
-                    <span className="typing-dot" />
-                    <span className="typing-dot" />
+              ))}
+              {loading && (
+                <div className="flex justify-start mb-4 animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full btn-gradient flex items-center justify-center flex-shrink-0">
+                      <DiamondsFourIcon size={14} className="text-white" />
+                    </div>
+                    <div className="glass msg-ai px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                        <span className="typing-dot" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          )}
-
-          <div ref={messagesEndRef} />
           </div>
-        </div>
+        )}
 
         {/* Input */}
-        <div 
-          className={`px-4 md:px-6 pt-2 flex flex-col items-center flex-shrink-0 z-10 transition-all duration-500 ease-in-out ${
-            messages.length === 0 
-              ? 'absolute top-[52%] left-0 right-0 w-full' 
-              : 'pb-4 md:pb-6 relative'
-          }`} 
-          style={messages.length === 0 ? {} : { background: 'linear-gradient(to top, var(--bg-base) 20%, transparent)' }}
+        <div
+          className="px-4 md:px-6 pt-2 pb-4 md:pb-6 flex flex-col items-center flex-shrink-0 z-10 relative"
+          style={messages.length > 0 ? { background: 'linear-gradient(to top, var(--bg-base) 20%, transparent)' } : {}}
         >
+          {/* Welcome text — sits just above input on welcome screen */}
+          {messages.length === 0 && (
+            <div className="w-full max-w-3xl mb-5 animate-fade-in">
+              <span className="text-xl md:text-2xl font-regular block" style={{ color: 'var(--text-secondary)' }}>Hi Buddy</span>
+              <span className="text-3xl md:text-4xl leading-tight block" style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Where should we start?</span>
+            </div>
+          )}
           <div className="w-full max-w-3xl bg-white rounded-[24px] md:rounded-[30px] flex flex-col p-1.5 md:p-2 transition-all duration-200 shadow-sm border-[1px] border-gray-300">
             <textarea
               ref={textareaRef}
@@ -501,6 +495,9 @@ const ChatInterface = () => {
             Press Enter to send · Shift+Enter for new line
           </p>
         </div>
+
+        {/* Bottom spacer — equal to top spacer, perfectly centers welcome+input */}
+        {messages.length === 0 && <div className="flex-1" />}
       </div>
 
       {/* ── Auth Modal ── */}
