@@ -46,6 +46,20 @@ const ChatInterface = () => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const pendingSessionRef = useRef(null);
+  const touchStartXRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (!isMobile) return;
+    if (delta > 60 && !isSidebarOpen) setIsSidebarOpen(true);
+    if (delta < -60 && isSidebarOpen) setIsSidebarOpen(false);
+  };
 
   // Close user menu on outside click
   useEffect(() => {
@@ -282,7 +296,11 @@ const ChatInterface = () => {
       </aside>
 
       {/* ── Main Chat ── */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div
+        className="flex-1 flex flex-col min-w-0 relative"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
 
         {/* Header */}
         <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 flex-shrink-0 relative z-20 border-b border-gray-100/50">
