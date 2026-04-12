@@ -53,7 +53,7 @@ export const uploadDocument = async (file, onProgress) => {
     // Local mode: upload directly to backend
     const formData = new FormData();
     formData.append('file', file);
-    const { data: localData } = await axios.post(`${API_URL}/upload/local`, formData, {
+    const { data: localData } = await api.post(`${API_URL}/upload/local`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
