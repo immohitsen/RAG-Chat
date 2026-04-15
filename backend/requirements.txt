@@ -5,7 +5,7 @@ langchain-community
 langchain-mongodb
 langchain-text-splitters
 pypdf
-sentence-transformers
+sentence-transformers==2.7.0
 langchain-groq
 python-dotenv
 pymongo

@@ -61,3 +61,6 @@ frontend/.next/
 # Uploaded files
 backend/data/uploaded/
 backend/uploads/
+
+# Embedding model cache (baked into Docker image, not committed to git)
+backend/model_cache/

@@ -1,7 +1,6 @@
 """
 RAG Service - Wrapper around MongoDB Vector Store pipeline
 """
-import os
 import sys
 from pathlib import Path
 
@@ -93,7 +92,7 @@ Summary:"""
 
         return history_msgs
 
-    def query(self, query_text: str, top_k: int = 3, selected_files: list = None, chat_history: list = None):
+    def query(self, query_text: str, top_k: int = 3, selected_files: list = None, chat_history: list = None, user_id: str = None):
         """
         Query the RAG system with optional file filtering and chat history.
         Returns: (answer, sources_list)
@@ -102,17 +101,10 @@ Summary:"""
         if selected_files is not None and len(selected_files) == 0:
             return self.respond_direct(query_text, "general", chat_history)
 
-        results = self.rag_search.vectorstore.search(query_text, top_k=top_k * 20 if selected_files else top_k)
-
-        # Filter by selected files if provided
-        if selected_files:
-            filtered_results = []
-            for r in results:
-                source = r.get("metadata", {}).get("source", "")
-                if any(os.path.basename(source) == file for file in selected_files):
-                    filtered_results.append(r)
-            results = filtered_results[:top_k]
-
+        # user_id + selected_files filtering is pushed into the DB query
+        results = self.rag_search.vectorstore.hybrid_search(
+            query_text, top_k=top_k, user_id=user_id, selected_files=selected_files
+        )
         # Filter by similarity threshold
         results = [r for r in results if (1.0 - r.get("distance", 1.0)) >= SIMILARITY_THRESHOLD]
 
@@ -128,7 +120,6 @@ Summary:"""
 
         # Build messages with history + current query
         history_msgs = self.build_history_messages(chat_history or [])
-
         system = SystemMessage(content=(
             "You are a document-based QA assistant. Answer the user's question using ONLY the provided document context. "
             "Use the conversation history to understand follow-up questions and references to previous answers."

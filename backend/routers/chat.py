@@ -45,7 +45,7 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
             answer, sources_list = rag_service.respond_direct(request.query, "chitchat", chat_history)
         else:
             selected_files = getattr(request, 'selected_files', None)
-            answer, sources_list = rag_service.query(request.query, request.top_k, selected_files, chat_history)
+            answer, sources_list = rag_service.query(request.query, request.top_k, selected_files, chat_history, user_id=current_user["_id"])
 
         query_time = round(time.time() - start_time, 2)
 

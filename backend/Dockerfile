@@ -10,14 +10,12 @@ RUN dnf install -y gcc-c++ make && dnf clean all
 # Copy requirements.txt and install with optimizations
 COPY requirements.txt .
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir --compile -r requirements.txt && \
-    find ${LAMBDA_TASK_ROOT} -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
-    find ${LAMBDA_TASK_ROOT} -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
-    find ${LAMBDA_TASK_ROOT} -name "*.pyc" -delete 2>/dev/null || true
+    pip install --no-cache-dir -r requirements.txt
 
-# Pre-download the embedding model so Lambda doesn't need internet access
-ENV SENTENCE_TRANSFORMERS_HOME=/var/task/models
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+# Pre-download the embedding model during build
+ENV SENTENCE_TRANSFORMERS_HOME=/var/task/model_cache
+RUN mkdir -p /var/task/model_cache && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # Copy the rest of the backend source code
 COPY . .
