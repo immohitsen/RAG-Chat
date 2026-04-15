@@ -4,13 +4,11 @@ from services.rag_service import rag_service
 from database import get_db
 from models.db_models import MessageModel
 from auth.dependencies import get_current_user
-from langfuse.decorators import observe, langfuse_context
 import time
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
 @router.post("/chat", response_model=ChatResponse)
-@observe(name="chat_request")
 async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     """
     Main RAG endpoint - Query the knowledge base
@@ -19,13 +17,6 @@ async def chat(request: ChatRequest, current_user=Depends(get_current_user)):
     """
     try:
         start_time = time.time()
-
-        # Attach user + session to the trace so you can filter by user in LangFuse dashboard
-        langfuse_context.update_current_trace(
-            user_id=str(current_user["_id"]),
-            session_id=str(request.session_id) if request.session_id else None,
-            name=f"chat:{request.query[:50]}"
-        )
 
         # Fetch chat history for this session
         chat_history = []

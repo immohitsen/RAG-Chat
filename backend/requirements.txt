@@ -20,4 +20,3 @@ motor
 mangum==0.17.0
 python-jose[cryptography]
 bcrypt
-langfuse
