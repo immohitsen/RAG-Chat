@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from langchain_core.messages import SystemMessage, HumanMessage
+from langfuse.decorators import observe, langfuse_context
 
 # Import from src/
 from src.search import RAGSearch
@@ -42,8 +43,11 @@ class RAGServiceWrapper:
         self._initialized = True
         print("[RAG Service] MongoDB RAG pipeline ready!")
 
+    @observe(name="intent_classifier")
     def classify_intent(self, query: str) -> str:
-        return self.classifier.classify(query)
+        result = self.classifier.classify(query)
+        langfuse_context.update_current_observation(input=query, output=result)
+        return result
 
     def respond_direct(self, query: str, mode: str, chat_history: list = None) -> tuple:
         system = CHITCHAT_SYSTEM if mode == "chitchat" else GENERAL_SYSTEM
@@ -92,11 +96,17 @@ Summary:"""
 
         return history_msgs
 
+    @observe(name="rag_query")
     def query(self, query_text: str, top_k: int = 3, selected_files: list = None, chat_history: list = None, user_id: str = None):
         """
         Query the RAG system with optional file filtering and chat history.
         Returns: (answer, sources_list)
         """
+        langfuse_context.update_current_observation(
+            input=query_text,
+            metadata={"top_k": top_k, "selected_files": selected_files, "user_id": user_id}
+        )
+
         # selected_files=None means no filter, selected_files=[] means nothing selected → no results
         if selected_files is not None and len(selected_files) == 0:
             return self.respond_direct(query_text, "general", chat_history)
@@ -107,6 +117,13 @@ Summary:"""
         )
         # Filter by similarity threshold
         results = [r for r in results if (1.0 - r.get("distance", 1.0)) >= SIMILARITY_THRESHOLD]
+
+        langfuse_context.update_current_observation(
+            metadata={
+                "chunks_retrieved": len(results),
+                "chunks": [r.get("metadata", {}).get("text", "")[:100] for r in results]
+            }
+        )
 
         if not results:
             return self.respond_direct(query_text, "general", chat_history)
@@ -128,6 +145,8 @@ Summary:"""
 
         response = self.rag_search.llm.invoke([system] + history_msgs + [user_msg])
         answer = response.content
+
+        langfuse_context.update_current_observation(output=answer)
 
         # Format sources
         sources = []
