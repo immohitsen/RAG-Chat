@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from '../src/context/AuthContext';
+import { ThemeProvider } from '../src/context/ThemeContext';
 import ChatInterface from '../src/components/ChatInterface';
 
 export default function Page() {
@@ -17,9 +18,11 @@ export default function Page() {
         }}
       />
       <div style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%' }}>
-        <AuthProvider>
-          <ChatInterface />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ChatInterface />
+          </AuthProvider>
+        </ThemeProvider>
       </div>
     </div>
   );

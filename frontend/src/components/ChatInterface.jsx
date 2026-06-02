@@ -9,6 +9,7 @@ import FileSelector from './FileSelector';
 import ChatHistory from './ChatHistory';
 import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   PaperPlaneRightIcon,
   BookOpenIcon,
@@ -20,12 +21,18 @@ import {
   ListIcon,
   NotePencilIcon,
   UserCircleIcon,
-  SignOutIcon
+  SignOutIcon,
+  FileTextIcon,
+  XIcon,
+  SunIcon,
+  MoonIcon,
+  MonitorIcon
 } from '@phosphor-icons/react';
 
 
 const ChatInterface = () => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme() || {};
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
@@ -38,7 +45,6 @@ const ChatInterface = () => {
   const [topK, setTopK] = useState(3);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [stats, setStats] = useState({ queries: 0, sources: 0 });
   const [showContext, setShowContext] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
@@ -164,10 +170,6 @@ const ChatInterface = () => {
         metadata: response.metadata,
       };
       setMessages(prev => [...prev, aiMessage]);
-      setStats(prev => ({
-        queries: prev.queries + 1,
-        sources: prev.sources + (response.sources?.length || 0),
-      }));
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -195,7 +197,6 @@ const ChatInterface = () => {
   const handleNewChat = () => {
     setCurrentSessionId(null);
     setMessages([]);
-    setStats({ queries: 0, sources: 0 });
   };
 
   const handleSelectSession = async (sessionId) => {
@@ -212,10 +213,6 @@ const ChatInterface = () => {
       const msgs = await getSessionMessages(sessionId);
       if (pendingSessionRef.current !== sessionId) return;
       setMessages(msgs);
-      setStats({
-        queries: msgs.filter(m => m.role === 'user').length,
-        sources: msgs.reduce((acc, m) => acc + (m.sources?.length || 0), 0)
-      });
     } catch (err) {
       console.error("Failed to load session", err);
     } finally {
@@ -224,7 +221,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-white">
+    <div className="flex h-full w-full overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* ── Sidebar Backdrop (Mobile) ── */}
       <div
         className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-all duration-300 ${
@@ -240,16 +237,16 @@ const ChatInterface = () => {
       <aside className={`
         flex-shrink-0 flex flex-col gap-5 border-r z-50 overflow-hidden
         ${isMobile 
-          ? `fixed inset-y-0 left-0 w-72 bg-white shadow-2xl p-4 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}` 
+          ? `fixed inset-y-0 left-0 w-72 shadow-2xl p-4 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}` 
           : `relative transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'w-72 p-4' : 'w-[76px] py-4 px-2 items-center'}`}
       `}
-        style={!isMobile ? { borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' } : {}}>
+        style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
 
         <div className={`flex w-full ${isSidebarOpen ? 'justify-between' : 'justify-center'} px-1 items-center`}>
           {!isMobile && (
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-xl hover:bg-black/5 transition-colors text-gray-500"
+              className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-500 dark:text-gray-400"
               title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             >
               <ListIcon size={22} className="flex-shrink-0" />
@@ -259,7 +256,7 @@ const ChatInterface = () => {
           {isMobile && isSidebarOpen && (
              <button 
                 onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-xl hover:bg-black/5 text-gray-400"
+                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-gray-400"
              >
                 <CaretDownIcon size={20} className="rotate-90" />
              </button>
@@ -272,9 +269,10 @@ const ChatInterface = () => {
             handleNewChat();
             if (isMobile) setIsSidebarOpen(false);
           }}
-          className={`group flex items-center rounded-xl text-gray-700 font-medium transition-all duration-300 flex-shrink-0 overflow-hidden hover:bg-black/5 ${
+          className={`group flex items-center rounded-xl font-medium transition-all duration-300 flex-shrink-0 overflow-hidden hover:bg-black/5 dark:hover:bg-white/5 ${
             isSidebarOpen ? 'justify-start gap-3 px-3 py-2.5 w-full mx-0' : 'justify-center p-0 w-11 h-11'
           }`}
+          style={{ color: 'var(--text-secondary)' }}
           title="New chat"
         >
           <NotePencilIcon size={isSidebarOpen ? 20 : 20} className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105 opacity-80" />
@@ -308,20 +306,7 @@ const ChatInterface = () => {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="mt-4 flex-shrink-0 px-1">
-            <div className="glass-card p-4 flex gap-4">
-              <div className="flex-1 text-center">
-                <div className="text-xl font-bold gradient-text">{stats.queries}</div>
-                <div className="text-[10px] uppercase tracking-tighter" style={{ color: 'var(--text-muted)' }}>Queries</div>
-              </div>
-              <div className="w-px" style={{ background: 'var(--border-subtle)' }} />
-              <div className="flex-1 text-center">
-                <div className="text-xl font-bold gradient-text">{stats.sources}</div>
-                <div className="text-[10px] uppercase tracking-tighter" style={{ color: 'var(--text-muted)' }}>Sources</div>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </aside>
 
@@ -334,12 +319,12 @@ const ChatInterface = () => {
       >
 
         {/* Header */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 flex-shrink-0 relative z-20 border-b border-gray-100/50">
+        <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 flex-shrink-0 relative z-20 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="flex items-center gap-2 md:gap-3">
              {isMobile && (
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 -ml-2 rounded-xl hover:bg-black/5 text-gray-500"
+                  className="p-2 -ml-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400"
                 >
                   <ListIcon size={22} />
                 </button>
@@ -349,15 +334,15 @@ const ChatInterface = () => {
             </span>
           </div>
           <div className="flex items-center gap-3 md:gap-5">
-            {user && <FileSelector asHeaderIcon={true} onSelectionChange={setSelectedFiles} refreshTrigger={refreshTrigger} />}
-            <div className="hidden sm:block w-px h-6 bg-gray-200" />
+            {user && <FileSelector asHeaderIcon={true} onSelectionChange={setSelectedFiles} selectedFiles={selectedFiles} refreshTrigger={refreshTrigger} />}
+            <div className="hidden sm:block w-px h-6" style={{ background: 'var(--border-subtle)' }} />
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] md:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                 {isMobile ? 'Llama 3.1' : 'Llama 3.1 • Groq'}
               </span>
             </div>
-            <div className="hidden sm:block w-px h-6 bg-gray-200" />
+            <div className="hidden sm:block w-px h-6" style={{ background: 'var(--border-subtle)' }} />
             {user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
@@ -371,12 +356,42 @@ const ChatInterface = () => {
                 {showUserMenu && (
                   <>
                     <div className="fixed inset-0 z-20" onClick={() => setShowUserMenu(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-44 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in"
+                    <div className="absolute right-0 top-full mt-2 w-52 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in"
                       style={{ border: '1px solid var(--border-subtle)' }}>
                       <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                         <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.username}</p>
                         <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Logged in</p>
                       </div>
+
+                      {/* Theme Toggle */}
+                      <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                        <p className="text-[10px] uppercase font-semibold tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Theme</p>
+                        <div className="flex rounded-xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                          {[
+                            { key: 'light', icon: <SunIcon size={14} />, label: 'Light' },
+                            { key: 'dark', icon: <MoonIcon size={14} />, label: 'Dark' },
+                            { key: 'system', icon: <MonitorIcon size={14} />, label: 'Auto' },
+                          ].map(opt => (
+                            <button
+                              key={opt.key}
+                              onClick={() => setTheme(opt.key)}
+                              className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-medium transition-all duration-200 ${
+                                theme === opt.key
+                                  ? 'text-purple-500 dark:text-purple-400'
+                                  : 'hover:bg-black/5 dark:hover:bg-white/5'
+                              }`}
+                              style={{
+                                color: theme === opt.key ? 'var(--accent-purple)' : 'var(--text-muted)',
+                                background: theme === opt.key ? 'var(--bg-surface-hover)' : 'transparent',
+                              }}
+                            >
+                              {opt.icon}
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <button
                         onClick={() => { logout(); handleNewChat(); setShowUserMenu(false); }}
                         className="w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-red-500/10 text-left"
@@ -445,80 +460,122 @@ const ChatInterface = () => {
           {/* Welcome text — sits just above input on welcome screen */}
           {messages.length === 0 && (
             <div className="w-full max-w-3xl mb-5 animate-fade-in">
-              <span className="text-xl md:text-2xl font-regular block" style={{ color: 'var(--text-secondary)' }}>Hi Buddy</span>
+              <span className="text-xl md:text-2xl font-regular block" style={{ color: 'var(--text-secondary)' }}>Hi {user?.username || 'Buddy'}</span>
               <span className="text-3xl md:text-4xl leading-tight block" style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Where should we start?</span>
             </div>
           )}
-          <div className="w-full max-w-3xl bg-white rounded-[24px] md:rounded-[30px] flex flex-col p-1.5 md:p-2 transition-all duration-200 shadow-sm border-[1px] border-gray-300">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              onClick={() => { if (!user) setShowAuthModal(true); }}
-              placeholder={user ? (isMobile ? "Ask anything..." : "Ask With Context") : "Login to start chatting..."}
-              className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500"
-              style={{ color: 'var(--text-primary)', minHeight: '50px', maxHeight: '50px', overflowY: 'auto' }}
-              rows={1}
-              disabled={loading || !user}
-            />
-            
-            <div className="flex items-center justify-between w-full mt-1 px-1 pb-1">
-              <div className="flex items-center gap-1 md:gap-2">
-                <button
-                  onClick={() => setShowUpload(true)}
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                  title="Upload Document"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  <PlusIcon size={20} className="text-gray-500" />
-                </button>
-                
-                {/* Custom Popover for Top-K */}
-                <div className="relative flex items-center">
+          <div className="relative w-full max-w-3xl">
+            <div className="gemini-bloom-glow" />
+            <div 
+              className="w-full rounded-[24px] md:rounded-[30px] flex flex-col p-1.5 md:p-2 transition-all duration-200 shadow-sm border-[1px] relative z-10" 
+              style={{ 
+                background: 'var(--bg-base)', 
+                borderColor: 'var(--border-subtle)'
+              }}
+            >
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                onClick={() => { if (!user) setShowAuthModal(true); }}
+                placeholder={user ? (isMobile ? "Ask anything..." : "Ask With Context") : "Login to start chatting..."}
+                className="w-full bg-transparent resize-none text-[15px] p-3 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-gray-500 dark:placeholder:text-gray-500"
+                style={{ color: 'var(--text-primary)', minHeight: '50px', maxHeight: '50px', overflowY: 'auto' }}
+                rows={1}
+                disabled={loading || !user}
+              />
+
+              {/* Selected file tickers */}
+              {selectedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-2 pb-1 pt-0.5 max-h-[72px] overflow-y-auto">
+                  {selectedFiles.map(filename => (
+                    <span
+                      key={filename}
+                      className="inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-lg text-[11px] font-medium transition-all duration-200 hover:bg-purple-100 dark:hover:bg-purple-500/20 group cursor-default"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(168,85,247,0.08), rgba(139,92,246,0.12))',
+                        color: 'var(--accent-purple)',
+                        border: '1px solid rgba(168,85,247,0.15)',
+                      }}
+                    >
+                      <FileTextIcon size={12} weight="duotone" className="flex-shrink-0 opacity-70" />
+                      <span className="truncate max-w-[120px]">{filename}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFiles(prev => {
+                            const next = prev.filter(f => f !== filename);
+                            return next;
+                          });
+                        }}
+                        className="ml-0.5 p-0.5 rounded-md opacity-50 hover:opacity-100 hover:bg-purple-200/50 transition-all flex-shrink-0"
+                      >
+                        <XIcon size={10} weight="bold" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between w-full mt-1 px-1 pb-1">
+                <div className="flex items-center gap-1 md:gap-2">
                   <button
-                    onClick={() => setShowContext(!showContext)}
-                    className="h-7 md:h-8 px-2 md:px-3 flex items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 transition-colors"
-                    title="Context Chunks"
+                    onClick={() => setShowUpload(true)}
+                    className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    title="Upload Document"
                     style={{ color: 'var(--text-secondary)' }}
                   >
-                    <DatabaseIcon size={14} className="text-gray-500" />
-                    <span className="text-[12px] font-medium text-gray-600">{isMobile ? 'Chunks: ' : 'Context: '}{topK}</span>
-                    <CaretDownIcon size={12} className="opacity-70" />
+                    <PlusIcon size={20} style={{ color: 'var(--text-muted)' }} />
                   </button>
                   
-                  {showContext && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowContext(false)} />
-                      <div className="absolute bottom-full left-0 mb-2 w-auto min-w-[64px] bg-white p-1.5 animate-scale-in z-50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 flex flex-col gap-0.5">
-                        <div className="text-[10px] uppercase font-bold text-gray-400 px-2 py-1 mb-1 text-center tracking-wider">Chunks</div>
-                        {[1, 3, 5, 7, 10].map(k => (
-                          <button
-                            key={k}
-                            onClick={() => {
-                              setTopK(k);
-                              setShowContext(false);
-                            }}
-                            className={`w-full py-2 text-[13px] font-medium rounded-xl transition-colors ${topK === k ? 'bg-gray-100 text-black' : 'hover:bg-gray-50 text-gray-500'}`}
-                          >
-                            {k}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                  {/* Custom Popover for Top-K */}
+                  <div className="relative flex items-center">
+                    <button
+                      onClick={() => setShowContext(!showContext)}
+                      className="h-7 md:h-8 px-2 md:px-3 flex items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                      title="Context Chunks"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <DatabaseIcon size={14} style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>{isMobile ? 'Chunks: ' : 'Context: '}{topK}</span>
+                      <CaretDownIcon size={12} className="opacity-70" />
+                    </button>
+                    
+                    {showContext && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowContext(false)} />
+                        <div className="absolute bottom-full left-0 mb-2 w-auto min-w-[64px] p-1.5 animate-scale-in z-50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col gap-0.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                          <div className="text-[10px] uppercase font-bold px-2 py-1 mb-1 text-center tracking-wider" style={{ color: 'var(--text-muted)' }}>Chunks</div>
+                          {[1, 3, 5, 7, 10].map(k => (
+                            <button
+                              key={k}
+                              onClick={() => {
+                                setTopK(k);
+                                setShowContext(false);
+                              }}
+                              className={`w-full py-2 text-[13px] font-medium rounded-xl transition-colors ${topK === k ? 'dark:bg-white/10 bg-gray-100' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                              style={{ color: topK === k ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                            >
+                              {k}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center gap-1">
-                {/* Send Button replaces mic visually when typing or just sits next to it. Let's place it here. */}
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || loading}
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:bg-gray-100"
-                >
-                  <PaperPlaneRightIcon size={20} className={!input.trim() || loading ? "text-gray-400" : "text-black"} weight="fill"/>
-                </button>
+                
+                <div className="flex items-center gap-1">
+                  {/* Send Button replaces mic visually when typing or just sits next to it. Let's place it here. */}
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim() || loading}
+                    className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 hover:bg-gray-100 dark:hover:bg-white/10"
+                  >
+                    <PaperPlaneRightIcon size={20} style={{ color: !input.trim() || loading ? 'var(--text-muted)' : 'var(--text-primary)' }} weight="fill"/>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -547,6 +604,8 @@ const ChatInterface = () => {
                 onUploadSuccess={handleUploadSuccess}
                 onClose={() => setShowUpload(false)}
                 onBusyStateChange={setIsIndexing}
+                selectedFiles={selectedFiles}
+                onSelectionChange={setSelectedFiles}
               />
             </div>
           </div>

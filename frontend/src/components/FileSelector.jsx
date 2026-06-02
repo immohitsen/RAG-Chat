@@ -4,9 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { listIndexedFiles, deleteFile, downloadFile } from '../services/api';
 import { Folders, CaretDown, Trash, CheckSquare, Square, Hash, Folder, DownloadSimple } from '@phosphor-icons/react';
 
-const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
+const FileSelector = ({ onSelectionChange, selectedFiles = [], refreshTrigger, asHeaderIcon }) => {
   const [files, setFiles] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -34,11 +33,10 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
       const response = await listIndexedFiles();
       const fileList = response.files || [];
       setFiles(fileList);
-      if (isInitial) {
-        const allNames = fileList.map(f => f.filename);
-        setSelectedFiles(allNames);
-        onSelectionChange(allNames);
-      }
+      // if (isInitial) {
+      //   const allNames = fileList.map(f => f.filename);
+      //   onSelectionChange(allNames);
+      // }
     } catch (err) {
       console.error('Failed to fetch files:', err);
     } finally {
@@ -47,23 +45,18 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
   };
 
   const toggleFile = (filename) => {
-    setSelectedFiles(prev => {
-      const next = prev.includes(filename)
-        ? prev.filter(f => f !== filename)
-        : [...prev, filename];
-      onSelectionChange(next);
-      return next;
-    });
+    const next = selectedFiles.includes(filename)
+      ? selectedFiles.filter(f => f !== filename)
+      : [...selectedFiles, filename];
+    onSelectionChange(next);
   };
 
   const selectAll = () => {
     const all = files.map(f => f.filename);
-    setSelectedFiles(all);
     onSelectionChange(all);
   };
 
   const deselectAll = () => {
-    setSelectedFiles([]);
     onSelectionChange([]);
   };
 
@@ -72,11 +65,8 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
     if (!confirm(`Delete "${filename}"?`)) return;
     try {
       await deleteFile(filename);
-      setSelectedFiles(prev => {
-        const next = prev.filter(f => f !== filename);
-        onSelectionChange(next);
-        return next;
-      });
+      const next = selectedFiles.filter(f => f !== filename);
+      onSelectionChange(next);
       await fetchFiles();
     } catch (err) {
       alert(`Failed to delete: ${err.response?.data?.detail || err.message}`);
@@ -125,8 +115,8 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
           onClick={() => setShowDropdown(o => !o)}
           className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity relative"
         >
-          <Folder size={18} className={files.length === 0 ? 'text-gray-400' : 'text-gray-500'} />
-          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Files</span>
+          <Folder size={18} style={{ color: files.length === 0 ? 'var(--text-muted)' : 'var(--text-secondary)' }} />
+          <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Files</span>
           {files.length === 0 && !loading && (
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" />
           )}
@@ -151,7 +141,7 @@ const FileSelector = ({ onSelectionChange, refreshTrigger, asHeaderIcon }) => {
           {/* Blur backdrop (just for the dropdown area feel) */}
           <div className="fixed inset-0 z-20" onClick={() => setShowDropdown(false)} />
 
-          <div className={`${asHeaderIcon ? 'fixed top-[56px] left-2 right-2 md:absolute md:top-full md:left-auto md:right-0 md:w-72 shadow-2xl' : 'absolute top-full left-0 w-72'} mt-0 md:mt-2 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
+          <div className={`${asHeaderIcon ? 'fixed top-[56px] left-2 right-2 md:absolute md:top-full md:left-auto md:right-0 md:w-72 shadow-2xl dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]' : 'absolute top-full left-0 w-72'} mt-0 md:mt-2 glass-strong rounded-2xl z-30 overflow-hidden animate-scale-in`}
             style={{ border: '1px solid var(--border-subtle)' }}>
 
             {/* Header */}

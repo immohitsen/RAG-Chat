@@ -34,9 +34,9 @@ const AuthModal = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative glass-strong rounded-2xl p-7 w-[90vw] max-w-sm border border-gray-700 animate-scale-in">
+      <div className="relative glass-strong rounded-2xl p-7 w-[90vw] max-w-sm animate-scale-in" style={{ border: '1px solid var(--border-subtle)' }}>
 
-        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 text-gray-400">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10" style={{ color: 'var(--text-muted)' }}>
           <X size={16} />
         </button>
 
@@ -69,7 +69,8 @@ const AuthModal = ({ onClose }) => {
             <button
               type="button"
               onClick={() => setShowPassword(p => !p)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80 transition-opacity"
+              style={{ color: 'var(--text-muted)' }}
             >
               {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
             </button>

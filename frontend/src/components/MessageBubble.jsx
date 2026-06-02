@@ -15,7 +15,7 @@ const MessageBubble = ({ message }) => {
   if (isUser) {
     return (
       <div className="flex justify-end mb-4">
-        <div className="max-w-[85%] md:max-w-[75%] bg-black/5 rounded-[22px] px-4 py-2.5 md:px-5 md:py-3 text-[15px] md:text-[16px] leading-relaxed text-gray-800 break-words">
+        <div className="max-w-[85%] md:max-w-[75%] bg-black/5 dark:bg-white/5 rounded-[22px] px-4 py-2.5 md:px-5 md:py-3 text-[15px] md:text-[16px] leading-relaxed break-words" style={{ color: 'var(--text-primary)' }}>
           {message.content}
         </div>
       </div>
@@ -49,7 +49,7 @@ const MessageBubble = ({ message }) => {
                 blockquote: ({node, ...props}) => <blockquote style={{ borderLeft: '3px solid var(--border-subtle)', paddingLeft: 12, margin: '12px 0', color: 'var(--text-muted)' }} {...props} />,
                 code: ({node, inline, ...props}) => 
                   inline ? (
-                    <code style={{ background: 'rgba(0,0,0,0.05)', borderRadius: 4, padding: '2px 6px', fontSize: '0.85em', fontFamily: 'monospace', color: 'var(--text-primary)' }} {...props} />
+                    <code style={{ background: 'var(--code-bg)', borderRadius: 4, padding: '2px 6px', fontSize: '0.85em', fontFamily: 'monospace', color: 'var(--text-primary)' }} {...props} />
                   ) : (
                     <pre style={{ background: 'var(--bg-surface-hover, rgba(0,0,0,0.03))', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: '12px 14px', overflowX: 'auto', margin: '12px 0', fontSize: 13 }}>
                       <code style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }} {...props} />

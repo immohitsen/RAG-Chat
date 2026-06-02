@@ -40,11 +40,11 @@ const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
   };
 
   if (loading && sessions.length === 0) {
-    return <div className="text-xs text-slate-400 px-2 py-4">Loading history...</div>;
+    return <div className="text-xs px-2 py-4" style={{ color: 'var(--text-muted)' }}>Loading history...</div>;
   }
 
   if (sessions.length === 0) {
-    return <div className="text-xs text-slate-500 px-2 py-4">No recent chats</div>;
+    return <div className="text-xs px-2 py-4" style={{ color: 'var(--text-muted)' }}>No recent chats</div>;
   }
 
   return (
@@ -56,8 +56,9 @@ const ChatHistory = ({ currentSessionId, onSelectSession, refreshTrigger }) => {
             key={session._id}
             onClick={() => onSelectSession(session._id)}
             className={`group flex items-center justify-between px-3 py-1 rounded-[20px] cursor-pointer transition-colors ${
-              isActive ? 'bg-purple-500/10 text-purple-600' : 'hover:bg-white/5 text-slate-600 hover:text-slate-400'
+              isActive ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'hover:bg-black/5 dark:hover:bg-white/5'
             }`}
+            style={!isActive ? { color: 'var(--text-secondary)' } : {}}
           >
             <div className="flex items-center gap-2 overflow-hidden">
               <span className="text-sm font-medium truncate">
