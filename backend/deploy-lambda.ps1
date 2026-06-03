@@ -31,7 +31,8 @@ try {
 # Step 2: Authenticate Docker to ECR
 Write-Host "`n🔐 Step 2: Authenticating Docker to ECR..." -ForegroundColor Yellow
 $password = aws ecr get-login-password --region $AWS_REGION
-$password | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+$ECR_REGISTRY_URI = "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+$password | docker login --username AWS --password-stdin $ECR_REGISTRY_URI
 
 # Step 3: Build Docker image
 Write-Host "`n🔨 Step 3: Building Docker image..." -ForegroundColor Yellow
