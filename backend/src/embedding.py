@@ -5,7 +5,7 @@ import numpy as np
 from src.data_loader import load_all_documents
 
 class EmbeddingPipeline:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", chunk_size: int = 1000, chunk_overlap: int = 200):
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2", chunk_size: int = 512, chunk_overlap: int = 50):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.model = SentenceTransformer(model_name)

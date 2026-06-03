@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from langchain_core.messages import SystemMessage, HumanMessage
+from sentence_transformers import CrossEncoder
 
 # Import from src/
 from src.search import RAGSearch
@@ -39,6 +40,10 @@ class RAGServiceWrapper:
         print("[RAG Service] Initializing MongoDB RAG pipeline...")
         self.rag_search = RAGSearch()
         self.classifier = IntentClassifier(self.rag_search.llm)
+
+        print("[RAG Service] Loading cross-encoder reranker...")
+        self.reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
         self._initialized = True
         print("[RAG Service] MongoDB RAG pipeline ready!")
 
@@ -101,28 +106,81 @@ Summary:"""
         if selected_files is not None and len(selected_files) == 0:
             return self.respond_direct(query_text, "general", chat_history)
 
-        # user_id + selected_files filtering is pushed into the DB query
-        results = self.rag_search.vectorstore.hybrid_search(
-            query_text, top_k=top_k, user_id=user_id, selected_files=selected_files
-        )
-        # Filter by similarity threshold
-        results = [r for r in results if (1.0 - r.get("distance", 1.0)) >= SIMILARITY_THRESHOLD]
+        # Detect listing/enumeration queries — these need broader coverage
+        # e.g. "list all projects", "what are all the skills", "every experience"
+        LISTING_KEYWORDS = {"all", "list", "every", "enumerate", "complete", "full", "entire", "summarize", "summary"}
+        query_words = set(query_text.lower().split())
+        is_listing_query = bool(query_words & LISTING_KEYWORDS)
 
-        if not results:
-            return self.respond_direct(query_text, "general", chat_history)
+        # Listing queries: fetch ALL chunks directly from MongoDB — skip vector search entirely.
+        # Vector search finds "similar" chunks, not "all" chunks about a topic.
+        # A chunk about "QAOA entropy engine" scores near 0 against "list all projects",
+        # so it would never surface via similarity. Full fetch + LLM extraction is the right approach.
+        if is_listing_query:
+            results = self.rag_search.vectorstore.get_all_chunks(
+                user_id=user_id, selected_files=selected_files
+            )
+        else:
+            # Precision queries: use hybrid search + reranking as normal
+            candidate_k = top_k * 3
+            results = self.rag_search.vectorstore.hybrid_search(
+                query_text, top_k=candidate_k, user_id=user_id, selected_files=selected_files
+            )
+            results = [r for r in results if (1.0 - r.get("distance", 1.0)) >= SIMILARITY_THRESHOLD]
 
-        # Build context
-        texts = [r["metadata"].get("text", "") for r in results if r.get("metadata")]
-        context = "\n\n".join(texts)
+            if not results:
+                return self.respond_direct(query_text, "general", chat_history)
+
+            # Re-rank and trim to top_k
+            if len(results) > 1:
+                candidate_texts = [r["metadata"].get("text", "") for r in results if r.get("metadata")]
+                pairs = [(query_text, t) for t in candidate_texts]
+                rerank_scores = self.reranker.predict(pairs)
+                scored = sorted(zip(rerank_scores, results), key=lambda x: x[0], reverse=True)
+                results = [r for _, r in scored[:top_k]]
+
+
+        # Build context — group by source file so LLM sees each document's content together
+        from collections import defaultdict
+        chunks_by_file = defaultdict(list)
+        for r in results:
+            metadata = r.get("metadata", {})
+            text = metadata.get("text", "")
+            source = metadata.get("source", "Unknown")
+            filename = Path(source).name if source != "Unknown" else "Unknown"
+            chunks_by_file[filename].append(text)
+
+        unique_sources = list(chunks_by_file.keys())
+        context_parts = []
+        for filename, chunks in chunks_by_file.items():
+            combined = "\n\n".join(chunks)
+            context_parts.append(f"[Source: {filename}]\n{combined}")
+        context = "\n\n---\n\n".join(context_parts)
 
         if not context:
             return self.respond_direct(query_text, "general", chat_history)
+
+        # Build system prompt — tell LLM how many source files are present
+        multi_doc_note = (
+            f"There are {len(unique_sources)} source documents: {', '.join(unique_sources)}. "
+            "Present your answer SEPARATELY for each document, clearly labeled with the filename. "
+            "NEVER merge or mix information across documents. "
+        ) if len(unique_sources) > 1 else ""
 
         # Build messages with history + current query
         history_msgs = self.build_history_messages(chat_history or [])
         system = SystemMessage(content=(
             "You are a document-based QA assistant. Answer the user's question using ONLY the provided document context. "
-            "Use the conversation history to understand follow-up questions and references to previous answers."
+            "Each chunk of context is labeled with [Source: filename] indicating which document it came from. "
+            f"{multi_doc_note}"
+            "When answering questions about a specific person or document, ONLY use chunks from that person's file. "
+            "NEVER mix information across different source files. "
+            "Use the conversation history to understand follow-up questions and references to previous answers. "
+            "ALWAYS format your response using markdown: "
+            "use bullet points (- item) for lists of achievements, projects, skills, or experiences; "
+            "use **bold** for section headers or candidate names; "
+            "use tables when comparing multiple candidates side by side; "
+            "NEVER write lists as a single run-on paragraph or comma-separated sentence."
         ))
         user_msg = HumanMessage(content=f"Document context:\n{context}\n\nQuestion: {query_text}")
 

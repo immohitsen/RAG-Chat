@@ -249,7 +249,33 @@ class MongoDBVectorStore:
 
         return final
 
-    
+    def get_all_chunks(self, user_id: str = None, selected_files: list = None) -> List[Dict]:
+        """
+        Fetch ALL chunks for a user's documents directly from MongoDB.
+        Used for listing/enumeration queries where vector similarity is unreliable
+        because technical content scores low against generic queries like 'list all projects'.
+        """
+        import re
+        match = {}
+        if user_id:
+            match["user_id"] = user_id
+        if selected_files:
+            match["source"] = {"$in": [re.compile(re.escape(f) + "$") for f in selected_files]}
+
+        raw = list(self.collection.find(match, {"_id": 1, "text": 1, "metadata": 1, "source": 1}))
+        print(f"[MongoDB Store] Full fetch: {len(raw)} chunks for listing query.")
+
+        return [{
+            "id": str(r["_id"]),
+            "distance": 0.0,   # treat all as perfect match — LLM does the filtering
+            "metadata": {
+                "text": r.get("text", ""),
+                "source": r.get("source", "Unknown"),
+                **r.get("metadata", {})
+            }
+        } for r in raw]
+
+
 
     def delete_by_filename(self, filename: str, user_id: str = None):
         """Delete all chunks belonging to a specific filename"""

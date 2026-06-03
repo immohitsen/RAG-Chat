@@ -351,12 +351,10 @@ html.dark .msg-ai {
   width: 140%;
   height: 220px;
   max-width: 1000px;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(219, 234, 254, 0.6) 0%,
-    rgba(243, 232, 255, 0.3) 35%,
-    rgba(255, 255, 255, 0) 70%
-  );
+  background: radial-gradient(ellipse at center,
+      rgba(219, 234, 254, 0.6) 0%,
+      rgba(243, 232, 255, 0.3) 35%,
+      rgba(255, 255, 255, 0) 70%);
   filter: blur(45px);
   pointer-events: none;
   z-index: 0;
@@ -366,12 +364,10 @@ html.dark .msg-ai {
 }
 
 html.dark .gemini-bloom-glow {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(37, 56, 111, 0.7) 0%,
-    rgba(99, 102, 241, 0.22) 35%,
-    rgba(168, 85, 247, 0.08) 60%,
-    transparent 80%
-  );
+  background: radial-gradient(ellipse at center,
+      rgba(37, 56, 111, 0.7) 0%,
+      rgba(71, 73, 207, 0.22) 35%,
+      rgba(129, 132, 255, 0.08) 60%,
+      transparent 80%);
   filter: blur(55px);
 }
